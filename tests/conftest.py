@@ -1,6 +1,18 @@
+import os
 import pytest
+import pytest_asyncio
 import asyncio
 from backend.models.database import init_db
+
+
+@pytest.fixture(autouse=True, scope="session")
+def dummy_llm_api_keys():
+    """Provide placeholder API keys so LLM clients can be constructed in
+    tests without real credentials. Tests that need actual API responses
+    still mock `agent.llm.generate` explicitly."""
+    os.environ.setdefault("OPENAI_API_KEY", "test-openai-key")
+    os.environ.setdefault("ANTHROPIC_API_KEY", "test-anthropic-key")
+    os.environ.setdefault("GROQ_API_KEY", "test-groq-key")
 
 
 def pytest_configure(config):
@@ -65,7 +77,7 @@ def test_session_metadata():
     }
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def async_client():
     """Async test client for API testing."""
     from httpx import AsyncClient

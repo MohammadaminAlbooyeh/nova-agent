@@ -1,5 +1,8 @@
 # MCP
-mcp>=1.0.0
+# Pinned below 2.0: mcp 2.x removed the decorator-style Server API
+# (list_tools()/call_tool()/list_resources()/read_resource()) that
+# mcp_server/server.py relies on.
+mcp>=1.0.0,<2.0.0
 
 # Web
 httpx>=0.25.0

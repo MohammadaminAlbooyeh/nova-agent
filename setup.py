@@ -7,7 +7,7 @@ setup(
     packages=find_packages(),
     python_requires=">=3.11",
     install_requires=[
-        "mcp>=1.0.0",
+        "mcp>=1.0.0,<2.0.0",
         "httpx>=0.25.0",
         "fastapi>=0.104.0",
         "uvicorn>=0.24.0",

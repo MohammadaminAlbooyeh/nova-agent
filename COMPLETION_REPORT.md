@@ -2,9 +2,13 @@
 
 ## Executive Summary
 
-The MCP Agent System has been successfully upgraded from **78-82% to 92-95% completion**. All five priority gaps have been implemented with production-ready code, comprehensive testing infrastructure, and full documentation.
+The MCP Agent System has been successfully upgraded from **78-82% to 92-95% completion**. All five priority gaps have been implemented with testing infrastructure and documentation.
 
-**Project Status: PRODUCTION-READY ✓**
+**Project Status: feature-complete for the priorities below, with known gaps before "production-ready."**
+See the "Known Security Limitations" section in [README.md](README.md) for what still needs work before exposing
+this to untrusted input: `code_executor` is not sandboxed (exec() with full builtins), the SQL tools use a
+keyword blacklist rather than a real query sandbox, and the agent's plan-execution loop previously never
+invoked MCP tools at all (fixed — see `agent/reasoning/react_pattern.py` wiring in `agent/core/executor.py`).
 
 ---
 
@@ -449,18 +453,24 @@ curl http://localhost:8000/api/executions/execute \
 
 ## Conclusion
 
-The MCP Agent System is now **production-ready** with all major gaps addressed:
+The MCP Agent System has made solid progress with these major gaps addressed:
 
-✅ **Session Management**: Full lifecycle support with state preservation  
-✅ **Semantic Memory**: Vector-based search with multiple strategies  
-✅ **OAuth Integration**: Secure authentication with auto-refresh  
-✅ **Web Search**: Structured results with caching and filtering  
-✅ **Error Handling**: Comprehensive exception hierarchy with recovery  
+✅ **Session Management**: Full lifecycle support with state preservation
+✅ **Semantic Memory**: Vector-based search with multiple strategies
+✅ **OAuth Integration**: Secure authentication with auto-refresh
+✅ **Web Search**: Structured results with caching and filtering
+✅ **Error Handling**: Comprehensive exception hierarchy with recovery
+✅ **User-supplied LLM API keys**, document upload, enforced agent policy/constraints, and a lightweight
+  local-only deployment mode (see README.md)
 
-**Estimated Project Completion: 92-95%**  
-**Ready for: Deployment, Multi-tenant use, Production workloads**
+**Estimated Project Completion: 92-95%**
+**Before calling this "production-ready" or using it for multi-tenant/production workloads**, address the
+items in README.md's "Known Security Limitations" section — notably that `code_executor` is not sandboxed and
+the SQL tools rely on keyword filtering, not a real query sandbox. The full unit/integration/load test suite
+(`pytest tests/`) passes (117/117) as of this report's last update, which was not true previously.
 
-The remaining 5-8% consists of polish items, advanced features, and UI enhancements that can be added incrementally without affecting core functionality.
+The remaining work consists of closing those security gaps, plus polish items, advanced features, and UI
+enhancements that can be added incrementally without affecting core functionality.
 
 ---
 

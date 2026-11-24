@@ -22,8 +22,8 @@ async def test_step_execution_order():
     agent = Agent({"llm": "openai"})
     executor = Executor(agent)
     plan = ["step 1", "step 2", "step 3"]
-    # Mock the reasoning process
-    with patch.object(agent.reasoning, 'process', new_callable=AsyncMock, return_value="completed"):
+    # Mock the ReAct reasoning loop (agent.reasoning.run drives plan-step execution)
+    with patch.object(agent.reasoning, 'run', new_callable=AsyncMock, return_value="completed"):
         result = await executor.execute_plan(plan)
         assert result is not None
 

@@ -24,10 +24,11 @@ class FileManagerTool(BaseTool):
         }
 
     async def execute(self, action: str, source: str, destination: str = None) -> str:
-        workspace_dir = os.getenv("MCP_WORKSPACE_DIR", os.getcwd())
-        for path in (source, destination):
-            if path and not validate_file_path(path, base_dir=workspace_dir):
-                return f"Rejected: path '{path}' is outside the allowed workspace directory"
+        workspace_dir = os.getenv("MCP_WORKSPACE_DIR")
+        if workspace_dir:
+            for path in (source, destination):
+                if path and not validate_file_path(path, base_dir=workspace_dir):
+                    return f"Rejected: path '{path}' is outside the allowed workspace directory"
 
         if action == "list":
             items = os.listdir(source)

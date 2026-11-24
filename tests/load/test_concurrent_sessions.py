@@ -3,13 +3,14 @@ Load tests for concurrent session operations.
 Tests system performance and stability under concurrent load.
 """
 import pytest
+import pytest_asyncio
 import asyncio
 import time
 from agent.core.session_manager import SessionManager
 from backend.services.session_repository import SessionRepository
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def session_manager_for_load():
     """Create session manager for load testing."""
     manager = SessionManager(ttl_minutes=60)

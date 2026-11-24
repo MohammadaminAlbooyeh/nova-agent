@@ -45,7 +45,11 @@ python -c "from backend.models.database import init_db; init_db()"
 SESSION_TTL_MINUTES=1440
 SESSION_MAX_ACTIVE=1000
 SESSION_CLEANUP_INTERVAL=60
-DATABASE_URL=postgresql://user:pass@localhost/mcp_agent_db
+
+# DATABASE_URL defaults to sqlite:///./mcp_agent.db and works fine for
+# session storage on a single local machine. Only set this to a
+# postgresql:// URL if you need a shared/multi-process database.
+# DATABASE_URL=postgresql://user:pass@localhost/mcp_agent_db
 ```
 
 ---

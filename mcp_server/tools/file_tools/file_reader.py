@@ -18,8 +18,8 @@ class FileReaderTool(BaseTool):
         }
 
     async def execute(self, path: str, format: str = "txt") -> str:
-        workspace_dir = os.getenv("MCP_WORKSPACE_DIR", os.getcwd())
-        if not validate_file_path(path, base_dir=workspace_dir):
+        workspace_dir = os.getenv("MCP_WORKSPACE_DIR")
+        if workspace_dir and not validate_file_path(path, base_dir=workspace_dir):
             return f"Rejected: path '{path}' is outside the allowed workspace directory"
 
         if format == "txt":

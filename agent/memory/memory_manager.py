@@ -11,7 +11,7 @@ logger = get_logger(__name__)
 
 
 class MemoryManager:
-    def __init__(self, use_semantic: bool = True, embedding_provider: str = "local", vector_store_type: str = "faiss"):
+    def __init__(self, use_semantic: bool = True, embedding_provider: str = "local", vector_store_type: str = "faiss", storage_path: str = "memory_store.json"):
         self.short_term = ShortTermMemory()
 
         embedding_service = None
@@ -28,7 +28,7 @@ class MemoryManager:
             except Exception as e:
                 logger.warning(f"Failed to initialize semantic memory: {e}")
 
-        self.long_term = LongTermMemory(embedding_service=embedding_service, vector_store=vector_store)
+        self.long_term = LongTermMemory(storage_path=storage_path, embedding_service=embedding_service, vector_store=vector_store)
         self.conversation = ConversationHistory()
         self.context = ContextWindow()
         self.embedding_service = embedding_service

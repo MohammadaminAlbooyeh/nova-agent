@@ -1,6 +1,6 @@
 # MCP Agent System
 
-A **production-ready AI Agent system** built on the Model Context Protocol (MCP). This project demonstrates how to build a sophisticated multi-tool, multi-step reasoning agent capable of autonomously searching the web, interacting with databases, managing files, sending emails, executing code, and more — all through a unified MCP interface.
+An AI Agent system built on the Model Context Protocol (MCP). This project demonstrates how to build a sophisticated multi-tool, multi-step reasoning agent capable of autonomously searching the web, interacting with databases, managing files, sending emails, executing code, and more — all through a unified MCP interface. See "⚠️ Known Security Limitations" below before treating this as production-ready for untrusted input.
 
 ## ✨ Key Features
 
@@ -36,7 +36,7 @@ Despite the "production-ready" framing above, be aware of these gaps before expo
 
 - **`code_executor` is not sandboxed.** It runs `exec()` with full builtins and process privileges. It is disabled by default via agent policy (`forbidden_tools`); only enable it if you understand the risk.
 - **`database_tools` (`sql_executor`, `db_writer`, `db_reader`) use string-built SQL**, not parameterized queries for table/column names, and only block a small set of schema-altering keywords (`DROP`, `TRUNCATE`, `ALTER`, `CREATE`, `GRANT`, `REVOKE`). This is a keyword filter, not a real SQL sandbox.
-- **`file_manager`/`file_reader`/`file_writer` are restricted to a workspace directory** (`MCP_WORKSPACE_DIR` env var, defaults to the current working directory) via `mcp_server/utils/validators.py:validate_file_path`, but this is path-containment, not a full OS-level sandbox.
+- **`file_manager`/`file_reader`/`file_writer` support an opt-in workspace restriction.** Set `MCP_WORKSPACE_DIR` to a directory to confine these tools to it (path-containment via `mcp_server/utils/validators.py:validate_file_path`, not a full OS-level sandbox). Unset by default, matching prior behavior.
 - The agent's plan-execution loop (`agent/core/executor.py` + `agent/reasoning/react_pattern.py`) now actually invokes MCP tools via the ReAct thought/action/observation loop; previously it only generated text without calling tools.
 
 ## 🚀 Quick Start

@@ -3,11 +3,12 @@ Integration tests for Session Management workflows.
 Tests the complete lifecycle of session creation, execution, and completion.
 """
 import pytest
+import pytest_asyncio
 from agent.core.session_manager import SessionManager
 from backend.services.session_repository import SessionRepository
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def session_setup():
     """Setup session manager and repository."""
     manager = SessionManager(ttl_minutes=60)

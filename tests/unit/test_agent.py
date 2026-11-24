@@ -9,9 +9,10 @@ def test_agent_initialization():
     assert agent is not None
 
 
-def test_memory_manager():
+@pytest.mark.asyncio
+async def test_memory_manager():
     mm = MemoryManager()
-    mm.store("key1", "value1")
+    await mm.store("key1", "value1")
     assert mm.retrieve("key1") == "value1"
 
 

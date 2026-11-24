@@ -6,12 +6,17 @@ from agent.memory.memory_manager import MemoryManager
 
 
 @pytest.fixture
-def memory_manager():
-    """Create memory manager with local embeddings for testing."""
+def memory_manager(tmp_path):
+    """Create memory manager with local embeddings for testing.
+
+    Uses a unique storage_path per test so long-term memory doesn't leak
+    state between tests via the shared default memory_store.json file.
+    """
     return MemoryManager(
         use_semantic=True,
         embedding_provider="local",
-        vector_store_type="memory"
+        vector_store_type="memory",
+        storage_path=str(tmp_path / "memory_store.json"),
     )
 
 
@@ -21,14 +26,10 @@ async def test_store_memory(memory_manager):
     key = "python_async"
     content = "async/await is a pattern for concurrent programming in Python"
 
-    await memory_manager.store(
-        content,
-        key=key,
-        memory_type="long_term"
-    )
+    await memory_manager.store(key, content, memory_type="long_term")
 
     # Verify it's in memory
-    memory = await memory_manager.retrieve(key, memory_type="long_term")
+    memory = memory_manager.retrieve(key, memory_type="long_term")
     assert memory is not None
 
 
@@ -44,7 +45,7 @@ async def test_semantic_search(memory_manager):
     ]
 
     for key, content in items:
-        await memory_manager.store(content, key=key, memory_type="long_term")
+        await memory_manager.store(key, content, memory_type="long_term")
 
     # Search for async-related content
     results = await memory_manager.semantic_search(
@@ -67,7 +68,7 @@ async def test_hybrid_search(memory_manager):
     ]
 
     for key, content in items:
-        await memory_manager.store(content, key=key, memory_type="long_term")
+        await memory_manager.store(key, content, memory_type="long_term")
 
     # Hybrid search
     results = await memory_manager.search(
@@ -85,33 +86,33 @@ async def test_memory_statistics(memory_manager):
     # Store some items
     for i in range(5):
         await memory_manager.store(
+            f"item_{i}",
             f"Item {i} content",
-            key=f"item_{i}",
             memory_type="long_term"
         )
 
     # Get stats
-    stats = await memory_manager.get_statistics()
+    stats = memory_manager.get_statistics()
 
-    assert "total_items" in stats or "memory_size" in stats
+    assert "long_term" in stats
+    assert stats["long_term"]["total_memories"] == 5
 
 
 @pytest.mark.asyncio
 async def test_batch_store(memory_manager):
     """Test batch storing multiple items."""
     items = [
-        {"key": f"item_{i}", "content": f"Content {i}"}
+        {"key": f"item_{i}", "value": f"Content {i}"}
         for i in range(10)
     ]
 
-    # Batch store
-    if hasattr(memory_manager, "batch_store"):
-        await memory_manager.batch_store(items)
+    count = await memory_manager.batch_store(items)
+    assert count == 10
 
-        # Verify retrieval
-        for item in items:
-            memory = await memory_manager.retrieve(item["key"], memory_type="long_term")
-            assert memory is not None
+    # Verify retrieval
+    for item in items:
+        memory = memory_manager.retrieve(item["key"], memory_type="long_term")
+        assert memory is not None
 
 
 @pytest.mark.asyncio
@@ -124,16 +125,15 @@ async def test_memory_retrieval_strategies(memory_manager):
     ]
 
     for key, content in items:
-        await memory_manager.store(content, key=key, memory_type="long_term")
+        await memory_manager.store(key, content, memory_type="long_term")
 
     # Test keyword strategy
-    if hasattr(memory_manager, "search"):
-        results = await memory_manager.search(
-            "python",
-            strategy="keyword",
-            limit=2
-        )
-        assert len(results) > 0
+    results = await memory_manager.search(
+        "python",
+        strategy="keyword",
+        limit=2
+    )
+    assert len(results) > 0
 
 
 @pytest.mark.asyncio
@@ -150,14 +150,14 @@ async def test_duplicate_keys(memory_manager):
     key = "test_key"
 
     # Store first version
-    await memory_manager.store("Version 1", key=key, memory_type="long_term")
+    await memory_manager.store(key, "Version 1", memory_type="long_term")
 
     # Store second version (should overwrite)
-    await memory_manager.store("Version 2", key=key, memory_type="long_term")
+    await memory_manager.store(key, "Version 2", memory_type="long_term")
 
     # Retrieve and verify
-    memory = await memory_manager.retrieve(key, memory_type="long_term")
-    assert memory is not None
+    memory = memory_manager.retrieve(key, memory_type="long_term")
+    assert memory == "Version 2"
 
 
 @pytest.mark.asyncio
@@ -170,10 +170,10 @@ async def test_special_characters_in_content(memory_manager):
     """
 
     await memory_manager.store(
+        "special_content",
         special_content,
-        key="special_content",
         memory_type="long_term"
     )
 
-    memory = await memory_manager.retrieve("special_content", memory_type="long_term")
+    memory = memory_manager.retrieve("special_content", memory_type="long_term")
     assert memory is not None

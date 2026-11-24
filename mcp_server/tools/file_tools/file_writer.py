@@ -19,8 +19,8 @@ class FileWriterTool(BaseTool):
         }
 
     async def execute(self, path: str, content: str, mode: str = "write") -> str:
-        workspace_dir = os.getenv("MCP_WORKSPACE_DIR", os.getcwd())
-        if not validate_file_path(path, base_dir=workspace_dir):
+        workspace_dir = os.getenv("MCP_WORKSPACE_DIR")
+        if workspace_dir and not validate_file_path(path, base_dir=workspace_dir):
             return f"Rejected: path '{path}' is outside the allowed workspace directory"
 
         file_mode = "w" if mode == "write" else "a"
