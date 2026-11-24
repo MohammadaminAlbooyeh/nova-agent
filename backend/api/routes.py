@@ -208,11 +208,9 @@ async def execute_tool(
     start = time.time()
     try:
         tools = await agent_service.get_tools()
-        tool_map = {t.name: t for t in tools}
-        tool = tool_map.get(tool_name)
-        if tool is None:
+        if tool_name not in {t.name for t in tools}:
             raise HTTPException(status_code=404, detail=f"Tool '{tool_name}' not found")
-        result = await tool.execute(**params)
+        result = await agent_service.orchestrator.agent.mcp_client.call_tool(tool_name, params)
         status = "success"
     except HTTPException:
         raise

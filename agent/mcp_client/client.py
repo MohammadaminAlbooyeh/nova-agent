@@ -15,6 +15,12 @@ class MCPClient:
         self._write_stream = None
 
     async def connect(self, transport: str = "stdio", command: str = None):
+        # Important: the underlying stdio/anyio streams are tied to the
+        # task that calls connect(). Call this from a long-lived task
+        # (e.g. the app's lifespan startup), never from inside a
+        # short-lived per-request handler - once that request's task
+        # finishes, anyio tears down its cancel scope and any later use
+        # of `session` raises anyio.ClosedResourceError.
         if transport == "stdio":
             from mcp.client.stdio import stdio_client
             from mcp import ClientSession, StdioServerParameters

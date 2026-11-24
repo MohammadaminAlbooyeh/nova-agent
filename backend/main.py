@@ -1,4 +1,5 @@
 import asyncio
+import os
 import uvicorn
 from contextlib import asynccontextmanager
 from dotenv import load_dotenv
@@ -31,7 +32,32 @@ async def lifespan(application: FastAPI):
     except Exception as exc:
         logger.warning(f"Redis init failed: {exc}")
 
+    # Connect the default agent's MCP client here, in the lifespan's own
+    # long-lived task, not from inside a per-request handler: the
+    # underlying stdio/anyio streams are tied to whichever task opened
+    # them, and a request's task ends as soon as that request completes,
+    # which would silently break the connection for later requests.
+    # Skipped under pytest: tests construct many short-lived Agent
+    # instances and spawning a real MCP subprocess for each is slow/flaky
+    # (tests that want a connection mock MCPClient.connect themselves).
+    mcp_connected = False
+    if "PYTEST_CURRENT_TEST" not in os.environ:
+        try:
+            from backend.api.dependencies import get_agent_service
+            agent_service = get_agent_service()
+            await agent_service.orchestrator.agent.mcp_client.connect()
+            mcp_connected = True
+            logger.info("MCP client connected")
+        except Exception as exc:
+            logger.warning(f"MCP client failed to connect: {exc}")
+
     yield
+
+    if mcp_connected:
+        try:
+            await agent_service.orchestrator.agent.mcp_client.close()
+        except Exception as exc:
+            logger.warning(f"MCP client failed to close cleanly: {exc}")
 
     _redis_client = None
     try:
