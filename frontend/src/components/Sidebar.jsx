@@ -13,11 +13,11 @@ const links = [
 function Sidebar() {
   return (
     <nav style={{
-      width: 220,
-      background: 'white',
-      borderRight: '1px solid #dcdde1',
-      padding: '16px 0',
-      minHeight: 'calc(100vh - 60px)',
+      width: 200,
+      background: 'var(--color-surface)',
+      borderRight: '1px solid var(--color-border)',
+      padding: '20px 0',
+      minHeight: 'calc(100vh - 56px)',
     }}>
       {links.map(link => (
         <NavLink
@@ -26,12 +26,15 @@ function Sidebar() {
           end={link.to === '/'}
           style={({ isActive }) => ({
             display: 'block',
-            padding: '10px 24px',
-            color: isActive ? '#1a73e8' : '#2c3e50',
-            background: isActive ? '#e8f0fe' : 'transparent',
+            padding: '9px 24px',
+            marginBottom: 2,
+            fontSize: 13.5,
+            color: isActive ? 'var(--color-primary-dark)' : 'var(--color-text)',
+            background: isActive ? 'var(--color-primary-bg)' : 'transparent',
             textDecoration: 'none',
-            fontWeight: isActive ? 'bold' : 'normal',
-            borderLeft: isActive ? '3px solid #1a73e8' : '3px solid transparent',
+            fontWeight: isActive ? 600 : 500,
+            borderLeft: isActive ? '3px solid var(--color-primary)' : '3px solid transparent',
+            transition: 'background-color 0.15s ease, color 0.15s ease',
           })}
         >
           {link.label}
