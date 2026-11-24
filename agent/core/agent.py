@@ -31,8 +31,17 @@ class Agent:
         llm_config = self.config.get("llm", {"provider": "openai"})
         if isinstance(llm_config, str):
             llm_config = {"provider": llm_config}
-        self.llm = LLMFactory.create(llm_config.get("provider", "openai"), llm_config)
+        self._llm_config = llm_config
+        self._llm = None
         self.history = []
+
+    @property
+    def llm(self):
+        # Constructed lazily: instantiating an Agent just to list tools or
+        # inspect its config shouldn't require an LLM API key to be set.
+        if self._llm is None:
+            self._llm = LLMFactory.create(self._llm_config.get("provider", "openai"), self._llm_config)
+        return self._llm
 
     async def run(self, task: str) -> str:
         logger.info(f"Agent received task: {task}" + (f" (session: {self.session_id})" if self.session_id else ""))
