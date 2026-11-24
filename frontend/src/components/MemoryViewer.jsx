@@ -7,7 +7,8 @@ function MemoryViewer({ memory }) {
     <div className="card" style={{ marginTop: 16 }}>
       <h3>Agent Memory</h3>
       <pre style={{
-        background: '#f8f9fa',
+        background: 'var(--color-surface-alt)',
+        color: 'var(--color-text)',
         padding: 12,
         borderRadius: 6,
         fontSize: 13,

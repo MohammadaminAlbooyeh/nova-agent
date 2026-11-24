@@ -12,14 +12,14 @@ function ReasoningViewer({ task, steps }) {
           <div key={i} style={{
             padding: '8px 12px',
             marginBottom: 8,
-            background: '#f8f9fa',
+            background: 'var(--color-surface-alt)',
             borderRadius: 6,
-            borderLeft: '3px solid #1a73e8',
+            borderLeft: '3px solid var(--color-primary)',
           }}>
             <strong>Step {i + 1}:</strong> {step}
           </div>
         )) : (
-          <p style={{ color: '#888' }}>Reasoning in progress...</p>
+          <p style={{ color: 'var(--color-text-muted)' }}>Reasoning in progress...</p>
         )}
       </div>
     </div>

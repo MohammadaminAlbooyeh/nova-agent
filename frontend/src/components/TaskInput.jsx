@@ -22,12 +22,9 @@ function TaskInput({ onSubmit, loading }) {
       />
       <button
         type="submit"
+        className="btn-primary"
         disabled={loading || !task.trim()}
-        style={{
-          background: loading ? '#ccc' : '#1a73e8',
-          color: 'white',
-          padding: '10px 24px',
-        }}
+        style={{ padding: '10px 24px' }}
       >
         {loading ? 'Running...' : 'Run Task'}
       </button>

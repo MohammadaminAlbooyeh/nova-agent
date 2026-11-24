@@ -17,7 +17,7 @@ function ToolList({ tools }) {
             {categoryTools.map(tool => (
               <div key={tool.name} className="card">
                 <h4>{tool.name}</h4>
-                <p style={{ color: '#666', fontSize: 13, marginTop: 8 }}>{tool.description}</p>
+                <p style={{ color: 'var(--color-text-muted)', fontSize: 13, marginTop: 8 }}>{tool.description}</p>
               </div>
             ))}
           </div>

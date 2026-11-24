@@ -1,9 +1,7 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import Header from './components/Header';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import Sidebar from './components/Sidebar';
 import HomePage from './pages/HomePage';
-import AgentPage from './pages/AgentPage';
 import TasksPage from './pages/TasksPage';
 import TaskDetailPage from './pages/TaskDetailPage';
 import ToolsPage from './pages/ToolsPage';
@@ -11,24 +9,32 @@ import MonitoringPage from './pages/MonitoringPage';
 import SettingsPage from './pages/SettingsPage';
 import './App.css';
 
+function MainContent() {
+  const location = useLocation();
+  const isToday = location.pathname === '/';
+
+  return (
+    <main className={`main-content${isToday ? '' : ' narrow'}`}>
+      <Routes>
+        <Route path="/" element={<HomePage />} />
+        <Route path="/agent" element={<Navigate to="/" replace />} />
+        <Route path="/tasks" element={<TasksPage />} />
+        <Route path="/tasks/:id" element={<TaskDetailPage />} />
+        <Route path="/tools" element={<ToolsPage />} />
+        <Route path="/monitoring" element={<MonitoringPage />} />
+        <Route path="/settings" element={<SettingsPage />} />
+      </Routes>
+    </main>
+  );
+}
+
 function App() {
   return (
     <Router>
       <div className="app">
-        <Header />
         <div className="app-body">
           <Sidebar />
-          <main className="main-content">
-            <Routes>
-              <Route path="/" element={<HomePage />} />
-              <Route path="/agent" element={<AgentPage />} />
-              <Route path="/tasks" element={<TasksPage />} />
-              <Route path="/tasks/:id" element={<TaskDetailPage />} />
-              <Route path="/tools" element={<ToolsPage />} />
-              <Route path="/monitoring" element={<MonitoringPage />} />
-              <Route path="/settings" element={<SettingsPage />} />
-            </Routes>
-          </main>
+          <MainContent />
         </div>
       </div>
     </Router>
