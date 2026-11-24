@@ -5,20 +5,46 @@ function AgentIcon({ size = 72 }) {
     <svg
       width={size}
       height={size}
-      viewBox="0 0 64 64"
+      viewBox="0 0 120 120"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       role="img"
       aria-label="Agent"
     >
-      <rect x="6" y="2" width="4" height="10" rx="2" fill="#1a73e8" />
-      <circle cx="8" cy="2" r="3" fill="#1a73e8" />
-      <rect x="10" y="14" width="44" height="36" rx="12" fill="#e8f0fe" stroke="#1a73e8" strokeWidth="2" />
-      <circle cx="24" cy="32" r="5" fill="#1a73e8" />
-      <circle cx="40" cy="32" r="5" fill="#1a73e8" />
-      <path d="M24 42c2.5 2.5 13.5 2.5 16 0" stroke="#1557b0" strokeWidth="2.5" strokeLinecap="round" />
-      <rect x="2" y="26" width="6" height="14" rx="3" fill="#1a73e8" />
-      <rect x="56" y="26" width="6" height="14" rx="3" fill="#1a73e8" />
+      {/* antennae */}
+      <line x1="42" y1="18" x2="36" y2="4" stroke="#c7ccd6" strokeWidth="3" strokeLinecap="round" />
+      <circle cx="36" cy="4" r="4" fill="#22d3ee" />
+      <line x1="78" y1="18" x2="84" y2="4" stroke="#c7ccd6" strokeWidth="3" strokeLinecap="round" />
+      <circle cx="84" cy="4" r="4" fill="#22d3ee" />
+
+      {/* head */}
+      <rect x="24" y="16" width="72" height="56" rx="24" fill="#eef1f6" stroke="#c7ccd6" strokeWidth="2" />
+
+      {/* ears */}
+      <rect x="14" y="36" width="10" height="20" rx="5" fill="#eef1f6" stroke="#c7ccd6" strokeWidth="2" />
+      <rect x="96" y="36" width="10" height="20" rx="5" fill="#eef1f6" stroke="#c7ccd6" strokeWidth="2" />
+
+      {/* eyes */}
+      <circle cx="46" cy="44" r="9" fill="#1b2234" />
+      <circle cx="49" cy="41" r="2.4" fill="white" />
+      <circle cx="74" cy="44" r="9" fill="#1b2234" />
+      <circle cx="77" cy="41" r="2.4" fill="white" />
+
+      {/* smile */}
+      <path d="M48 58c4 4 20 4 24 0" stroke="#1b2234" strokeWidth="3" strokeLinecap="round" fill="none" />
+
+      {/* cheeks */}
+      <circle cx="35" cy="54" r="4" fill="#fecdd3" opacity="0.7" />
+      <circle cx="85" cy="54" r="4" fill="#fecdd3" opacity="0.7" />
+
+      {/* body */}
+      <rect x="32" y="78" width="56" height="34" rx="14" fill="#eef1f6" stroke="#c7ccd6" strokeWidth="2" />
+      <rect x="52" y="88" width="16" height="14" rx="4" fill="#22d3ee" opacity="0.25" />
+      <circle cx="60" cy="95" r="4" fill="#22d3ee" />
+
+      {/* arms */}
+      <circle cx="26" cy="96" r="7" fill="#eef1f6" stroke="#c7ccd6" strokeWidth="2" />
+      <circle cx="94" cy="96" r="7" fill="#eef1f6" stroke="#c7ccd6" strokeWidth="2" />
     </svg>
   );
 }

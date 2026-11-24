@@ -606,9 +606,9 @@ code {
 .chat-input-bar button.send {
   background: var(--color-primary);
   color: #04222b;
-  border-radius: 999px;
-  width: 34px;
-  height: 34px;
+  border-radius: 10px;
+  width: 36px;
+  height: 36px;
   padding: 0;
   display: flex;
   align-items: center;
@@ -632,24 +632,35 @@ code {
 }
 
 .companion-hero {
-  background: linear-gradient(160deg, #1b2234 0%, #10141f 100%);
+  background:
+    radial-gradient(circle at 85% 15%, rgba(139, 92, 246, 0.18), transparent 55%),
+    linear-gradient(160deg, #1b2234 0%, #10141f 100%);
   border: 1px solid var(--color-border);
   border-radius: var(--radius);
   padding: 20px;
   position: relative;
   overflow: hidden;
+  min-height: 168px;
+}
+
+.companion-hero__text {
+  position: relative;
+  z-index: 1;
+  max-width: 128px;
 }
 
 .companion-hero h2 {
-  font-size: 16px;
-  margin-bottom: 10px;
-  max-width: 150px;
+  font-size: 18px;
+  line-height: 1.25;
+  margin-bottom: 12px;
 }
 
 .companion-hero__icon {
-  display: flex;
-  justify-content: center;
-  margin: 8px 0 14px;
+  position: absolute;
+  right: -14px;
+  bottom: -14px;
+  z-index: 0;
+  opacity: 0.95;
 }
 
 .status-pill {
@@ -682,8 +693,8 @@ code {
 }
 
 .companion-list-item__icon {
-  width: 30px;
-  height: 30px;
+  width: 32px;
+  height: 32px;
   border-radius: var(--radius-sm);
   background: var(--color-surface-alt);
   display: flex;
@@ -691,6 +702,15 @@ code {
   justify-content: center;
   flex-shrink: 0;
   color: var(--color-text-muted);
+}
+
+.companion-list-item__icon.tint-cyan { background: rgba(34, 211, 238, 0.16); color: var(--color-primary); }
+.companion-list-item__icon.tint-violet { background: rgba(139, 92, 246, 0.16); color: var(--color-violet); }
+.companion-list-item__icon.tint-amber { background: rgba(251, 191, 36, 0.16); color: var(--color-warning); }
+
+.companion-list-item__chevron {
+  color: var(--color-text-muted);
+  flex-shrink: 0;
 }
 
 .companion-list-item__main {

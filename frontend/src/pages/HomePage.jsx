@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Bookmark, BookmarkCheck, MoreHorizontal, Paperclip, Send, Sparkles } from 'lucide-react';
+import { Bookmark, BookmarkCheck, ChevronLeft, MoreHorizontal, Paperclip, Send, Sparkles } from 'lucide-react';
 import { agentApi } from '../services/agent_api';
 import AgentIcon from '../components/AgentIcon';
 import AgentCompanionPanel from '../components/AgentCompanionPanel';
@@ -79,7 +79,18 @@ function HomePage() {
     <div className="today-layout">
       <div className="chat-column">
         <div className="chat-topbar">
-          <h1 style={{ marginBottom: 0 }}>{title}</h1>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            {messages.length > 0 && (
+              <button
+                className="btn-icon"
+                title="Back to a new chat"
+                onClick={() => setMessages([])}
+              >
+                <ChevronLeft size={16} />
+              </button>
+            )}
+            <h1 style={{ marginBottom: 0 }}>{title}</h1>
+          </div>
           <div className="chat-topbar__actions" style={{ position: 'relative' }}>
             <button
               className="btn-icon"
@@ -119,7 +130,7 @@ function HomePage() {
             {messages.map((m, i) => (
               <div key={i} className={`chat-message chat-message--${m.role}`}>
                 <div className="chat-message__avatar">
-                  {m.role === 'agent' ? <AgentIcon size={20} /> : 'U'}
+                  {m.role === 'agent' ? <AgentIcon size={20} /> : 'LU'}
                 </div>
                 <div className="chat-message__body">
                   <div className="chat-message__name">{m.role === 'agent' ? 'Agent' : 'You'}</div>

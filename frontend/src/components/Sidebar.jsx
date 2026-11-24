@@ -36,7 +36,7 @@ function Sidebar() {
 
       <NavLink to="/settings" className="nav-rail__user" style={{ textDecoration: 'none', color: 'inherit' }}>
         <div className="nav-rail__avatar">
-          U
+          LU
           <span className="dot dot-success" />
         </div>
         <div>
