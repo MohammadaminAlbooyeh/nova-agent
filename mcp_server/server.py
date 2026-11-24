@@ -1,5 +1,9 @@
 import asyncio
 import json
+from dotenv import load_dotenv
+
+load_dotenv()
+
 from mcp.server import Server, NotificationOptions
 from mcp.server.models import InitializationOptions
 import mcp.server.stdio

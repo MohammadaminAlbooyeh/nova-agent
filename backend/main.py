@@ -1,8 +1,11 @@
 import asyncio
 import uvicorn
 from contextlib import asynccontextmanager
+from dotenv import load_dotenv
 from fastapi import FastAPI, Response
 from fastapi.middleware.cors import CORSMiddleware
+
+load_dotenv()
 
 from backend.api.routes import router
 from backend.api.sessions import router as sessions_router
