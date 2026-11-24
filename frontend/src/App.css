@@ -632,35 +632,40 @@ code {
 }
 
 .companion-hero {
-  background:
-    radial-gradient(circle at 85% 15%, rgba(139, 92, 246, 0.18), transparent 55%),
-    linear-gradient(160deg, #1b2234 0%, #10141f 100%);
+  background: #10141f;
   border: 1px solid var(--color-border);
   border-radius: var(--radius);
   padding: 20px;
   position: relative;
   overflow: hidden;
-  min-height: 168px;
+  min-height: 190px;
+}
+
+.companion-hero__bg {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: 72% 42%;
+  z-index: 0;
+}
+
+.companion-hero__bg::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to right, rgba(10, 13, 20, 0.97) 0%, rgba(10, 13, 20, 0.86) 38%, rgba(10, 13, 20, 0.25) 68%, rgba(10, 13, 20, 0.05) 100%);
 }
 
 .companion-hero__text {
   position: relative;
   z-index: 1;
-  max-width: 128px;
+  max-width: 130px;
 }
 
 .companion-hero h2 {
   font-size: 18px;
   line-height: 1.25;
   margin-bottom: 12px;
-}
-
-.companion-hero__icon {
-  position: absolute;
-  right: -14px;
-  bottom: -14px;
-  z-index: 0;
-  opacity: 0.95;
 }
 
 .status-pill {

@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react';
 import { Globe, Database, FileText, Mail, Plug, Code2, Calculator, Clock, ChevronRight } from 'lucide-react';
 import { api } from '../services/api';
 import { loadLocalSettings } from '../services/localSettings';
-import AgentIcon from './AgentIcon';
 
 const CATEGORY_META = {
   Web: { icon: Globe, tint: 'tint-cyan' },
@@ -63,15 +62,16 @@ function AgentCompanionPanel({ status }) {
   return (
     <div className="companion-panel">
       <div className="companion-hero">
+        <div
+          className="companion-hero__bg"
+          style={{ backgroundImage: `url(${process.env.PUBLIC_URL}/assets/agent-illustration.png)` }}
+        />
         <div className="companion-hero__text">
           <h2>Your local agent</h2>
           <span className="status-pill">
             <span className={`dot ${dotClass}`} />
             {label}
           </span>
-        </div>
-        <div className="companion-hero__icon">
-          <AgentIcon size={120} />
         </div>
       </div>
 
