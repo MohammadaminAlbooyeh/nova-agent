@@ -1,5 +1,10 @@
 # Tools Guide
 
+> **Security note:** `code_executor`, `file_manager` (delete action), and the `database_tools` are the
+> riskiest tools in this list. They are constrained by default via `agent/core/policy.py` (see the main
+> [README.md](../README.md)'s "Known Security Limitations" section) but are not fully sandboxed. Review
+> that section before enabling them for untrusted input.
+
 ## Web Tools
 - `web_search` - Search the web
 - `web_scraper` - Extract content from pages
