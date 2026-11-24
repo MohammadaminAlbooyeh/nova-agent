@@ -6,7 +6,7 @@ from openai import AsyncOpenAI
 class OpenAILLM:
     def __init__(self, config: dict = None):
         self.config = config or {}
-        api_key = os.getenv("OPENAI_API_KEY")
+        api_key = self.config.get("api_key") or os.getenv("OPENAI_API_KEY")
         try:
             self.client = AsyncOpenAI(api_key=api_key)
         except TypeError:

@@ -8,6 +8,13 @@ class Executor:
         self.agent = agent
 
     async def execute_plan(self, plan: list[dict]) -> str:
+        max_steps = getattr(self.agent.policy, "max_steps", None)
+        if max_steps is not None and len(plan) > max_steps:
+            logger.warning(
+                f"Plan has {len(plan)} steps, truncating to policy max_steps={max_steps}"
+            )
+            plan = plan[:max_steps]
+
         logger.info(f"Executing plan with {len(plan)} steps")
         results = []
         for step in plan:
@@ -27,7 +34,7 @@ class Executor:
             step["status"] = "in_progress"
         try:
             description = step.get("description") if isinstance(step, dict) else step
-            result = await self.agent.reasoning.process(description)
+            result = await self.agent.reasoning.run(description)
             if isinstance(step, dict):
                 step["status"] = "completed"
             return result

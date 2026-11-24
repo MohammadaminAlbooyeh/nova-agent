@@ -7,7 +7,10 @@ class CodeExecutorTool(BaseTool):
     def __init__(self):
         super().__init__()
         self.name = "code_executor"
-        self.description = "Execute Python code in a sandboxed environment"
+        self.description = (
+            "Execute Python code. NOT sandboxed: runs with full builtins and "
+            "process privileges. Disabled by default via agent policy."
+        )
         self.input_schema = {
             "type": "object",
             "properties": {

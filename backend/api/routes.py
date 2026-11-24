@@ -1,6 +1,6 @@
 import json
 from datetime import datetime
-from fastapi import APIRouter, Depends, HTTPException, WebSocket, WebSocketDisconnect
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, WebSocket, WebSocketDisconnect
 from pydantic import BaseModel
 from backend.api.schemas import (
     TaskCreate, TaskResponse, AgentRunRequest, AgentRunResponse,
@@ -9,6 +9,7 @@ from backend.api.schemas import (
 from backend.api.dependencies import get_agent_service, get_task_service
 from backend.services.agent_service import AgentService
 from backend.services.task_service import TaskService
+from backend.utils.document_parser import extract_text, SUPPORTED_EXTENSIONS
 from backend.utils.helpers import generate_id
 from backend.utils.logger import get_logger
 
@@ -30,6 +31,8 @@ _settings_store = {
     "llmProvider": "openai",
     "maxSteps": 20,
     "theme": "light",
+    "forbiddenTools": ["code_executor"],
+    "allowedDomains": [],
 }
 
 
@@ -37,6 +40,8 @@ class SettingsUpdate(BaseModel):
     llmProvider: str = "openai"
     maxSteps: int = 20
     theme: str = "light"
+    forbiddenTools: list[str] = ["code_executor"]
+    allowedDomains: list[str] = []
 
 
 @router.post("/agents/run", response_model=AgentRunResponse, tags=["Agents"])
@@ -65,7 +70,22 @@ async def run_agent(
         ```
     """
     logger.info(f"API: Run agent with task: {request.task}")
-    result = await agent_service.run_task(request.task, request.workflow)
+
+    config = {
+        "llm": {
+            "provider": request.llm_provider or _settings_store.get("llmProvider", "openai"),
+            "api_key": request.api_key,
+            "model": request.model,
+        },
+        "policy": {
+            "max_steps": _settings_store.get("maxSteps", 20),
+            "forbidden_tools": _settings_store.get("forbiddenTools", ["code_executor"]),
+            "allowed_domains": _settings_store.get("allowedDomains") or None,
+            **(request.policy.model_dump(exclude_none=True) if request.policy else {}),
+        },
+    }
+
+    result = await agent_service.run_task(request.task, request.workflow, config)
     return AgentRunResponse(task=request.task, result=result, status="completed")
 
 
@@ -259,6 +279,49 @@ async def update_settings(settings: SettingsUpdate):
     _settings_store.update(settings.model_dump())
     logger.info(f"Settings updated: {settings.model_dump()}")
     return _settings_store
+
+
+@router.post("/documents/upload", tags=["Documents"])
+async def upload_document(
+    file: UploadFile = File(...),
+    agent_service: AgentService = Depends(get_agent_service),
+):
+    """
+    Upload a document (.txt, .md, .pdf, .docx) and store its extracted text
+    in the agent's long-term memory so it can be used as context.
+
+    Returns:
+        dict: filename, number of characters extracted, and the memory key
+    """
+    import os
+
+    ext = os.path.splitext(file.filename or "")[1].lower()
+    if ext not in SUPPORTED_EXTENSIONS:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Unsupported file type '{ext}'. Supported: {sorted(SUPPORTED_EXTENSIONS)}",
+        )
+
+    content = await file.read()
+    try:
+        text = extract_text(file.filename, content)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Failed to parse document: {e}")
+
+    memory_key = f"document:{file.filename}:{generate_id()}"
+    await agent_service.orchestrator.agent.memory.store(
+        memory_key,
+        text,
+        memory_type="long_term",
+        metadata={"source": "upload", "filename": file.filename},
+    )
+
+    logger.info(f"Stored uploaded document '{file.filename}' as memory key {memory_key}")
+    return {
+        "filename": file.filename,
+        "characters_extracted": len(text),
+        "memory_key": memory_key,
+    }
 
 
 @router.get("/monitoring/metrics", tags=["Monitoring"])

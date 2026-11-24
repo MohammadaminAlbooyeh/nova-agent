@@ -24,6 +24,21 @@ A **production-ready AI Agent system** built on the Model Context Protocol (MCP)
 - **🔐 Session Management** with critical lifecycle bug fixes
 - **📚 Extensive Documentation** and example workflows
 
+### User-Supplied Configuration (Local Agent Mode)
+- **🔑 User-Supplied API Keys** - enter your own OpenAI/Claude/Groq key in the frontend Settings page; the key is stored only in the browser's `localStorage` and sent per-request, never persisted on the server
+- **📄 Document Upload** - upload `.txt`, `.md`, `.pdf`, or `.docx` files via `POST /api/documents/upload`; extracted text is stored in the agent's long-term memory as context
+- **🛡️ Agent Policy/Constraints** - configurable `max_steps`, `forbidden_tools`, `forbidden_actions`, and `allowed_domains`, enforced in `agent/core/policy.py` and checked on every tool call (not just declared in config)
+- **🪶 Lightweight Local Mode** - `docker-compose.local.yml` runs just the MCP server, backend, and frontend (SQLite + in-process memory, no Postgres/Redis/Prometheus/Grafana required); the full `docker-compose.yml` with the monitoring stack remains available for anyone who wants it
+
+## ⚠️ Known Security Limitations
+
+Despite the "production-ready" framing above, be aware of these gaps before exposing this to untrusted input:
+
+- **`code_executor` is not sandboxed.** It runs `exec()` with full builtins and process privileges. It is disabled by default via agent policy (`forbidden_tools`); only enable it if you understand the risk.
+- **`database_tools` (`sql_executor`, `db_writer`, `db_reader`) use string-built SQL**, not parameterized queries for table/column names, and only block a small set of schema-altering keywords (`DROP`, `TRUNCATE`, `ALTER`, `CREATE`, `GRANT`, `REVOKE`). This is a keyword filter, not a real SQL sandbox.
+- **`file_manager`/`file_reader`/`file_writer` are restricted to a workspace directory** (`MCP_WORKSPACE_DIR` env var, defaults to the current working directory) via `mcp_server/utils/validators.py:validate_file_path`, but this is path-containment, not a full OS-level sandbox.
+- The agent's plan-execution loop (`agent/core/executor.py` + `agent/reasoning/react_pattern.py`) now actually invokes MCP tools via the ReAct thought/action/observation loop; previously it only generated text without calling tools.
+
 ## 🚀 Quick Start
 
 ### Prerequisites

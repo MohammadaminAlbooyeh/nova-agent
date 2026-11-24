@@ -5,7 +5,8 @@ from groq import AsyncGroq
 class GroqLLM:
     def __init__(self, config: dict = None):
         self.config = config or {}
-        self.client = AsyncGroq(api_key=os.getenv("GROQ_API_KEY"))
+        api_key = self.config.get("api_key") or os.getenv("GROQ_API_KEY")
+        self.client = AsyncGroq(api_key=api_key)
         self.model = self.config.get("model", "mixtral-8x7b-32768")
         self.temperature = self.config.get("temperature", 0.7)
 

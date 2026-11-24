@@ -21,9 +21,20 @@ class TaskResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
+class AgentPolicyRequest(BaseModel):
+    max_steps: Optional[int] = None
+    forbidden_tools: Optional[list[str]] = None
+    forbidden_actions: Optional[dict[str, list[str]]] = None
+    allowed_domains: Optional[list[str]] = None
+
+
 class AgentRunRequest(BaseModel):
     task: str
     workflow: Optional[str] = None
+    llm_provider: Optional[str] = None
+    api_key: Optional[str] = None
+    model: Optional[str] = None
+    policy: Optional[AgentPolicyRequest] = None
 
 
 class AgentRunResponse(BaseModel):

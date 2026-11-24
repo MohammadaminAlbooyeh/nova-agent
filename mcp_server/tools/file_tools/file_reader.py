@@ -1,4 +1,6 @@
+import os
 from mcp_server.tools.base_tool import BaseTool
+from mcp_server.utils.validators import validate_file_path
 
 
 class FileReaderTool(BaseTool):
@@ -16,6 +18,10 @@ class FileReaderTool(BaseTool):
         }
 
     async def execute(self, path: str, format: str = "txt") -> str:
+        workspace_dir = os.getenv("MCP_WORKSPACE_DIR", os.getcwd())
+        if not validate_file_path(path, base_dir=workspace_dir):
+            return f"Rejected: path '{path}' is outside the allowed workspace directory"
+
         if format == "txt":
             with open(path, "r") as f:
                 return f.read()

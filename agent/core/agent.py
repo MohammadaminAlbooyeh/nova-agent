@@ -2,8 +2,9 @@ from agent.core.planner import Planner
 from agent.core.executor import Executor
 from agent.core.evaluator import Evaluator
 from agent.core.session_manager import SessionManager
+from agent.core.policy import AgentPolicy
 from agent.memory.memory_manager import MemoryManager
-from agent.reasoning.chain_of_thought import ChainOfThought
+from agent.reasoning.react_pattern import ReActPattern
 from agent.mcp_client.client import MCPClient
 from agent.llm.llm_factory import LLMFactory
 from agent.utils.logger import get_logger
@@ -19,12 +20,18 @@ class Agent:
         self.session_id = session_id
         self.session_manager = session_manager
         self.memory = MemoryManager()
+        self.policy = AgentPolicy.from_config(self.config)
         self.planner = Planner(self)
         self.executor = Executor(self)
         self.evaluator = Evaluator(self)
-        self.reasoning = ChainOfThought(self)
-        self.mcp_client = MCPClient()
-        self.llm = LLMFactory.create(self.config.get("llm", "openai"))
+        self.reasoning = ReActPattern(self)
+        self.reasoning.max_iterations = self.policy.max_steps
+        self.mcp_client = MCPClient(policy=self.policy)
+
+        llm_config = self.config.get("llm", {"provider": "openai"})
+        if isinstance(llm_config, str):
+            llm_config = {"provider": llm_config}
+        self.llm = LLMFactory.create(llm_config.get("provider", "openai"), llm_config)
         self.history = []
 
     async def run(self, task: str) -> str:

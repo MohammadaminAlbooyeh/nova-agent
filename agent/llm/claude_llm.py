@@ -5,7 +5,8 @@ import anthropic
 class ClaudeLLM:
     def __init__(self, config: dict = None):
         self.config = config or {}
-        self.client = anthropic.AsyncAnthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
+        api_key = self.config.get("api_key") or os.getenv("ANTHROPIC_API_KEY")
+        self.client = anthropic.AsyncAnthropic(api_key=api_key)
         self.model = self.config.get("model", "claude-3-opus-20240229")
         self.temperature = self.config.get("temperature", 0.7)
 

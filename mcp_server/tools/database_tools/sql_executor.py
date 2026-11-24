@@ -1,4 +1,5 @@
 from mcp_server.tools.base_tool import BaseTool
+from mcp_server.utils.validators import validate_sql_query
 
 
 class SQLExecutorTool(BaseTool):
@@ -16,6 +17,9 @@ class SQLExecutorTool(BaseTool):
         }
 
     async def execute(self, query: str, params: dict = None) -> str:
+        if not validate_sql_query(query):
+            return "Rejected: query contains a forbidden schema-altering keyword"
+
         from backend.models.database import get_session
         session = get_session()
         try:

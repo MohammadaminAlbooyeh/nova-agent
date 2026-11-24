@@ -4,8 +4,9 @@ logger = get_logger(__name__)
 
 
 class MCPClient:
-    def __init__(self, server_url: str = None):
+    def __init__(self, server_url: str = None, policy=None):
         self.server_url = server_url
+        self.policy = policy
         self.session = None
         self._tools_cache = []
         self._stdio_transport = None
@@ -38,6 +39,14 @@ class MCPClient:
         return result.tools
 
     async def call_tool(self, name: str, arguments: dict = None) -> str:
+        if self.policy:
+            from agent.core.policy import PolicyViolation
+            try:
+                self.policy.check_tool_call(name, arguments or {})
+            except PolicyViolation as e:
+                logger.warning(f"Blocked tool call '{name}': {e}")
+                return f"Blocked by policy: {e}"
+
         if not self.session:
             return f"Not connected to MCP server"
         result = await self.session.call_tool(name, arguments or {})
