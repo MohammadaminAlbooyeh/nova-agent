@@ -16,7 +16,7 @@ class ReActPattern:
                 return self._extract_final_answer(thought)
             action, params = self._parse_action(thought)
             if not action:
-                return thought
+                return self._extract_final_answer(thought)
             observation = await self._act(action, params)
             context += f"\nThought: {thought}\nAction: {action}\nObservation: {observation}"
         return context
@@ -24,11 +24,13 @@ class ReActPattern:
     async def _think(self, context: str) -> str:
         prompt = (
             f"{context}\n\n"
-            "What should I do next? Respond with:\n"
+            "What should I do next? Respond with EITHER:\n"
             "Thought: [your reasoning]\n"
             "Action: [tool_name]\n"
             "Action Input: [params]\n"
-            "or Final Answer: [response]"
+            "OR, if you already have enough information to respond to the "
+            "user (this is the common case for a simple message):\n"
+            "Final Answer: [your response to the user, nothing else]"
         )
         return await self.agent.llm.generate(prompt)
 
