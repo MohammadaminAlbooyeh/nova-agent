@@ -20,8 +20,8 @@ An AI Agent system built on the Model Context Protocol (MCP). This project demon
 
 ### Quality & Reliability
 - **✅ Comprehensive Testing** (unit, integration, load testing)
-- **📈 Production-Ready** with error handling and graceful degradation
-- **🔐 Session Management** with critical lifecycle bug fixes
+- **🧯 Error handling and graceful degradation** — see "⚠️ Known Security Limitations" below for what "production-ready" does *not* yet cover
+- **🔐 Session Management** with automatic expired-session cleanup
 - **📚 Extensive Documentation** and example workflows
 
 ### User-Supplied Configuration (Local Agent Mode)
@@ -32,10 +32,10 @@ An AI Agent system built on the Model Context Protocol (MCP). This project demon
 
 ## ⚠️ Known Security Limitations
 
-Despite the "production-ready" framing above, be aware of these gaps before exposing this to untrusted input:
+Be aware of these gaps before treating this as "production-ready" or exposing it to untrusted input:
 
-- **`code_executor` is still not sandboxed, but its risk surface is reduced.** It runs `exec()` with process privileges (no OS-level isolation, no resource limits), but the builtins environment now excludes `open`, `exec`, `eval`, `compile`, `__import__`, `input`, and a few others — which also means ordinary `import` statements fail inside it. A `timeout` is now actually enforced (it previously was accepted but ignored); the runaway thread can't be force-killed and may keep running in the background after the timeout fires. It remains disabled by default via agent policy (`forbidden_tools`); only enable it if you understand the residual risk.
-- **`database_tools` (`sql_executor`, `db_writer`, `db_reader`) use string-built SQL for table/column names** (values are still bound as parameters). Table/column names are now validated against a strict identifier pattern (`mcp_server/utils/validators.py:validate_identifier`), and raw query/WHERE-clause strings are rejected if they contain a schema-altering keyword (`DROP`, `TRUNCATE`, `ALTER`, `CREATE`, `GRANT`, `REVOKE`), a stacked statement (`;`), or a comment marker (`--`, `/*`). This meaningfully reduces injection risk but is still a filter, not a real SQL sandbox or parser.
+- **`code_executor` runs in a separate, resource-limited subprocess (CPU/memory limits, hard-killed on timeout) with restricted builtins** (no `open`/`exec`/`eval`/`compile`/`__import__`, so ordinary `import` statements fail). This contains the blast radius of a sandbox escape, but it is still **not a real sandbox**: there's no container, no network isolation, and a sufficiently creative payload can still reach OS primitives via object introspection (a well-known limitation of pure-Python restricted-builtins sandboxes). It remains disabled by default via agent policy (`forbidden_tools`); only enable it if you understand the residual risk.
+- **`database_tools` (`sql_executor`, `db_writer`, `db_reader`) use string-built SQL for table/column names** (values are still bound as parameters). Table/column names are validated against a strict identifier pattern (`mcp_server/utils/validators.py:validate_identifier`), raw query/WHERE-clause strings are rejected if they contain a schema-altering keyword (`DROP`, `TRUNCATE`, `ALTER`, `CREATE`, `GRANT`, `REVOKE`), a stacked statement (`;`), or a comment marker (`--`, `/*`), and all three tools refuse to touch tables that hold credentials/auth state (`oauth_tokens`, `oauth_client_credentials`, `sessions`). This meaningfully reduces injection and data-exposure risk but is still a filter, not a real SQL sandbox, parser, or per-row permission system — and all three are disabled by default via agent policy.
 - **`file_manager`/`file_reader`/`file_writer` support an opt-in workspace restriction.** Set `MCP_WORKSPACE_DIR` to a directory to confine these tools to it (path-containment via `mcp_server/utils/validators.py:validate_file_path`, not a full OS-level sandbox). Unset by default, matching prior behavior.
 - The agent's plan-execution loop (`agent/core/executor.py` + `agent/reasoning/react_pattern.py`) now actually invokes MCP tools via the ReAct thought/action/observation loop; previously it only generated text without calling tools.
 

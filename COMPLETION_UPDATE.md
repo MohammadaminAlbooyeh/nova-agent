@@ -1,5 +1,11 @@
 # MCP Agent System - Completion Update (July 8, 2026)
 
+> **Note:** This is a dated snapshot, not the current state. Claims like
+> "fully production-ready" below reflect a point-in-time self-assessment
+> of feature coverage, not a security audit, and should not be taken at
+> face value — see [README.md's "Known Security Limitations"](README.md#️-known-security-limitations)
+> for the actual current caveats.
+
 ## Summary
 
 Successfully completed the three remaining critical gaps to reach **95%+ project completion**:

@@ -1,5 +1,11 @@
 # MCP Agent System - Completion Report
 
+> **Note:** This is a dated snapshot, not the current state. The completion
+> percentages below reflect a point-in-time self-assessment of feature
+> coverage, not a security or production-readiness audit — treat them as
+> historical context. For the actual current security caveats, see
+> [README.md's "Known Security Limitations"](README.md#️-known-security-limitations).
+
 ## Executive Summary
 
 The MCP Agent System has been successfully upgraded from **78-82% to 92-95% completion**. All five priority gaps have been implemented with testing infrastructure and documentation.
