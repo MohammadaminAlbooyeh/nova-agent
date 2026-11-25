@@ -25,7 +25,7 @@ An AI Agent system built on the Model Context Protocol (MCP). This project demon
 - **📚 Extensive Documentation** and example workflows
 
 ### User-Supplied Configuration (Local Agent Mode)
-- **🔑 User-Supplied API Keys** - enter your own OpenAI/Claude/Groq key in the frontend Settings page; the key is stored only in the browser's `localStorage` and sent per-request, never persisted on the server
+- **🔑 User-Supplied API Keys** - enter your own OpenAI/Claude/Groq key in the frontend's Connections page; the key is stored only in the browser's `localStorage` and sent per-request, never persisted on the server. **Don't have one?** [Groq](https://console.groq.com) gives you a free API key with no credit card required - use that to get started at zero cost.
 - **📄 Document Upload** - upload `.txt`, `.md`, `.pdf`, or `.docx` files via `POST /api/documents/upload`; extracted text is stored in the agent's long-term memory as context
 - **🛡️ Agent Policy/Constraints** - configurable `max_steps`, `forbidden_tools`, `forbidden_actions`, and `allowed_domains`, enforced in `agent/core/policy.py` and checked on every tool call (not just declared in config)
 - **🪶 Lightweight Local Mode** - `docker-compose.local.yml` runs just the MCP server, backend, and frontend (SQLite + in-process memory, no Postgres/Redis/Prometheus/Grafana required); layer `docker-compose.monitoring.yml` on top if you want Prometheus/Grafana without the full stack, or use the full `docker-compose.yml` directly
@@ -43,7 +43,7 @@ Be aware of these gaps before treating this as "production-ready" or exposing it
 
 ### Prerequisites
 - Python 3.10+ and Node.js 18+ (for running directly), **or** Docker and Docker Compose
-- An API key from an LLM provider — [Groq](https://console.groq.com) has a free tier and is the easiest to start with; OpenAI/Claude/local (Ollama) also work. You can also add this later from the frontend's Connections page instead of `.env`.
+- An API key from an LLM provider. **For a free API key, use [Groq](https://console.groq.com)** - no credit card required. OpenAI/Claude/local (Ollama) also work, but aren't free. You can add the key later from the frontend's Connections page instead of `.env`.
 
 ### Option 1: Docker (lightweight local mode, no Postgres/Redis required)
 
