@@ -79,8 +79,20 @@ class Planner:
         return True
 
     def _parse_plan(self, response: str) -> list[dict]:
+        # The LLM sometimes glues two numbered steps onto one physical line
+        # (no real newline between "...1. foo" and "2. bar"), which would
+        # otherwise merge them into one malformed step. Split the response
+        # before every step marker first, so each ends up on its own line
+        # regardless of how the model formatted it.
+        normalized = re.sub(
+            r"(?<!^)(?=\n?\s*\*{0,2}(?:\d+[.)]|step\s*\d+[:.]?)\s)",
+            "\n",
+            response.strip(),
+            flags=re.IGNORECASE,
+        )
+
         steps = []
-        for line in response.strip().split("\n"):
+        for line in normalized.split("\n"):
             line = line.strip()
             if line and _STEP_LINE.match(line):
                 steps.append({"description": line, "status": "pending"})
