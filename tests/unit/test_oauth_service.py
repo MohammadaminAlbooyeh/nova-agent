@@ -26,6 +26,9 @@ def oauth_repository():
     repo.revoke_by_session_and_provider = AsyncMock(return_value=True)
     repo.get_decrypted_access_token = AsyncMock(return_value="decrypted_access_token")
     repo.get_decrypted_refresh_token = AsyncMock(return_value="decrypted_refresh_token")
+    repo.get_client_credentials = AsyncMock(return_value=None)
+    repo.save_client_credentials = AsyncMock(return_value=MagicMock())
+    repo.delete_client_credentials = AsyncMock(return_value=True)
     return repo
 
 
@@ -58,10 +61,11 @@ def _token_model(**overrides):
     return model
 
 
-def test_get_auth_url(oauth_service):
+@pytest.mark.asyncio
+async def test_get_auth_url(oauth_service):
     """Test generating authorization URL."""
     session_id = "test_session_123"
-    auth_url = oauth_service.get_auth_url(session_id)
+    auth_url = await oauth_service.get_auth_url(session_id)
 
     assert auth_url is not None
     assert isinstance(auth_url, str)
