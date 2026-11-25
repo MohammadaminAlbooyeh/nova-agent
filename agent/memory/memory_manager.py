@@ -61,6 +61,9 @@ class MemoryManager:
     async def batch_store(self, items: List[dict]) -> int:
         return await self.long_term.batch_store(items)
 
+    async def consolidate_memory(self) -> dict:
+        return await self.long_term.consolidate()
+
     def clear_short_term(self):
         self.short_term.clear()
         logger.info("Short-term memory cleared")

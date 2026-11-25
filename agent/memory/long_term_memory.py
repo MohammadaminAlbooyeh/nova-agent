@@ -9,12 +9,17 @@ logger = get_logger(__name__)
 
 
 class LongTermMemory:
-    def __init__(self, storage_path: str = "memory_store.json", embedding_service=None, vector_store=None):
+    def __init__(self, storage_path: str = "memory_store.json", embedding_service=None, vector_store=None, max_memories: int = 1000):
         self.storage_path = storage_path
         self._storage = {}
         self.embedding_service = embedding_service
         self.vector_store = vector_store
         self.strategy_selector = StrategySelector(embedding_service, vector_store)
+        # Without a cap, every store() call grows memory_store.json and the
+        # vector store forever. consolidate() keeps this bounded by dropping
+        # exact-duplicate values and, if still over the cap, the
+        # least-recently/least-often used entries.
+        self.max_memories = max_memories
         self._load()
 
     def _load(self) -> dict:
@@ -47,7 +52,68 @@ class LongTermMemory:
             except Exception as e:
                 logger.error(f"Failed to store embedding: {e}")
 
+        if len(self._storage) > self.max_memories:
+            await self.consolidate()
+
         self._save()
+
+    async def consolidate(self) -> dict:
+        """Drop exact-duplicate values, then (if still over max_memories)
+        the least valuable remaining entries, scored by recency and access
+        count. Returns {"duplicates_removed": int, "pruned": int}."""
+        duplicates_removed = await self._dedupe()
+        pruned = await self._prune_to_limit()
+        if duplicates_removed or pruned:
+            logger.info(f"Memory consolidation: removed {duplicates_removed} duplicate(s), pruned {pruned} entr(y/ies)")
+        return {"duplicates_removed": duplicates_removed, "pruned": pruned}
+
+    async def _dedupe(self) -> int:
+        seen_values: Dict[str, str] = {}  # serialized value -> key to keep
+        to_remove = []
+
+        for key, memory in sorted(self._storage.items(), key=lambda kv: kv[1].timestamp):
+            serialized = json.dumps(memory.value, sort_keys=True, default=str)
+            existing_key = seen_values.get(serialized)
+            if existing_key is None:
+                seen_values[serialized] = key
+                continue
+
+            existing = self._storage[existing_key]
+            # Keep whichever duplicate has been used more; the other is
+            # pure redundancy.
+            if memory.access_count > existing.access_count:
+                to_remove.append(existing_key)
+                seen_values[serialized] = key
+            else:
+                to_remove.append(key)
+
+        for key in to_remove:
+            await self._remove(key)
+
+        return len(to_remove)
+
+    async def _prune_to_limit(self) -> int:
+        overflow = len(self._storage) - self.max_memories
+        if overflow <= 0:
+            return 0
+
+        def score(memory: Memory) -> tuple:
+            # Lower score = pruned first: rarely accessed, long untouched.
+            return (memory.access_count, memory.last_accessed)
+
+        ranked = sorted(self._storage.values(), key=score)
+        for memory in ranked[:overflow]:
+            await self._remove(memory.key)
+
+        return overflow
+
+    async def _remove(self, key: str):
+        self._storage.pop(key, None)
+        if self.vector_store:
+            try:
+                await self.vector_store.delete(key)
+            except Exception as e:
+                logger.error(f"Failed to delete embedding for {key}: {e}")
 
     def retrieve(self, key: str) -> any:
         memory = self._storage.get(key)
