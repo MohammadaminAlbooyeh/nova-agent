@@ -19,11 +19,31 @@ from backend.utils.logger import get_logger
 logger = get_logger(__name__)
 config = AppConfig()
 
+SESSION_CLEANUP_INTERVAL_SECONDS = int(os.getenv("SESSION_CLEANUP_INTERVAL_SECONDS", "600"))
+
+
+async def _session_cleanup_loop():
+    from backend.api.dependencies import get_session_manager
+
+    session_manager = get_session_manager()
+    while True:
+        await asyncio.sleep(SESSION_CLEANUP_INTERVAL_SECONDS)
+        try:
+            count = await session_manager.cleanup_expired_sessions()
+            if count:
+                logger.info(f"Session cleanup: removed {count} expired session(s)")
+        except Exception as exc:
+            logger.warning(f"Session cleanup failed: {exc}")
+
 
 @asynccontextmanager
 async def lifespan(application: FastAPI):
     logger.info("Initializing database ")
     init_db()
+
+    cleanup_task = None
+    if "PYTEST_CURRENT_TEST" not in os.environ:
+        cleanup_task = asyncio.create_task(_session_cleanup_loop())
 
     try:
         from backend.utils.redis_client import get_redis_client
@@ -52,6 +72,9 @@ async def lifespan(application: FastAPI):
             logger.warning(f"MCP client failed to connect: {exc}")
 
     yield
+
+    if cleanup_task:
+        cleanup_task.cancel()
 
     if mcp_connected:
         try:
