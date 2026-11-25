@@ -47,16 +47,37 @@ class Agent:
         logger.info(f"Agent received task: {task}" + (f" (session: {self.session_id})" if self.session_id else ""))
 
         self.memory.short_term.store("current_task", task)
-        context = self._build_context(task)
         plan = await self.planner.create_plan(task)
         self.memory.short_term.store("plan", plan)
-        result = await self.executor.execute_plan(plan)
+
+        if self.planner.is_direct_answer(plan):
+            # Simple conversation: skip the ReAct loop entirely and answer
+            # the user's message directly, with recent history as context.
+            result = await self._direct_answer(task)
+        else:
+            result = await self.executor.execute_plan(plan, original_task=task)
+
         evaluation = await self.evaluator.evaluate(task, result)
         self.history.append({"task": task, "plan": plan, "result": result, "evaluation": evaluation})
         await self.memory.store(task, result, memory_type="long_term")
 
         await self._save_session_state()
         return result
+
+    async def _direct_answer(self, task: str) -> str:
+        history_lines = []
+        for h in self.history[-5:]:
+            history_lines.append(f"User: {h['task']}\nAssistant: {h['result']}")
+        history_block = (
+            "Previous conversation:\n" + "\n\n".join(history_lines) + "\n\n"
+        ) if history_lines else ""
+        prompt = (
+            f"{history_block}"
+            f"User message: {task}\n\n"
+            "Respond directly and concisely to the user's message. "
+            "Answer the question itself; do not describe steps or plans."
+        )
+        return await self.llm.generate(prompt)
 
     async def restore_from_session(self) -> bool:
         if not self.session_id or not self.session_manager:
@@ -96,9 +117,6 @@ class Agent:
             logger.debug(f"Saved session state for {self.session_id}")
         except Exception as e:
             logger.error(f"Failed to save session state: {e}")
-
-    def _build_context(self, task: str) -> str:
-        return f"Task: {task}\nContext: {self.memory.short_term.get_all()}"
 
     async def get_available_tools(self) -> list:
         return await self.mcp_client.list_tools()

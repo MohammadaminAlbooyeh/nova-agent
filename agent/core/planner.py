@@ -10,6 +10,10 @@ logger = get_logger(__name__)
 # Groq's) are inconsistent about exactly which of these they use.
 _STEP_LINE = re.compile(r"^\*{0,2}(?:\d+[.)]|[-*]|step\s*\d+[:.]?)", re.IGNORECASE)
 
+# The literal single-step plan the planner prompt asks for when the task
+# is simple conversation and needs no tools.
+_DIRECT_ANSWER = re.compile(r"directly answer the user'?s message", re.IGNORECASE)
+
 
 class Planner:
     def __init__(self, agent):
@@ -34,6 +38,18 @@ class Planner:
         response = await self.agent.llm.generate(prompt)
         plan = self._parse_plan(response)
         return plan
+
+    def is_direct_answer(self, plan: list[dict]) -> bool:
+        """True when the plan is the single literal 'directly answer' step.
+
+        In that case the caller should skip the ReAct loop entirely and
+        answer the user's message with one plain LLM call: running ReAct
+        on the bare step text would discard the user's actual message.
+        """
+        if len(plan) != 1:
+            return False
+        description = plan[0].get("description", "")
+        return bool(_DIRECT_ANSWER.search(description))
 
     def _parse_plan(self, response: str) -> list[dict]:
         steps = []

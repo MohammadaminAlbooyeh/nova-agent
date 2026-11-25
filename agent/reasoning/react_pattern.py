@@ -8,10 +8,19 @@ class ReActPattern:
         self.agent = agent
         self.max_iterations = 10
 
-    async def run(self, task: str) -> str:
-        context = f"Task: {task}"
+    async def run(self, task: str, original_task: str | None = None) -> str:
+        # The reasoning loop must always see the user's actual message.
+        # `task` here is one plan step (e.g. "2. Scrape the top result"),
+        # which is meaningless without the original request it came from.
+        if original_task and original_task.strip() != task.strip():
+            context = f"User message: {original_task}\nCurrent step: {task}"
+        else:
+            context = f"User message: {task}"
+
+        tools_block = await self._tools_block()
+
         for i in range(self.max_iterations):
-            thought = await self._think(context)
+            thought = await self._think(context, tools_block)
             if self._is_final(thought):
                 return self._extract_final_answer(thought)
             action, params = self._parse_action(thought)
@@ -21,13 +30,31 @@ class ReActPattern:
             context += f"\nThought: {thought}\nAction: {action}\nObservation: {observation}"
         return context
 
-    async def _think(self, context: str) -> str:
+    async def _tools_block(self) -> str:
+        # Without the tool list in the prompt, the model cannot know any
+        # valid tool names, so it never emits an Action and no tool is
+        # ever used.
+        try:
+            tools = await self.agent.get_available_tools()
+        except Exception as e:
+            logger.warning(f"Could not list tools for reasoning prompt: {e}")
+            return "(no tools available)"
+        if not tools:
+            return "(no tools available)"
+        lines = []
+        for t in tools:
+            description = getattr(t, "description", "") or ""
+            lines.append(f"- {t.name}: {description}".rstrip(": "))
+        return "\n".join(lines)
+
+    async def _think(self, context: str, tools_block: str) -> str:
         prompt = (
             f"{context}\n\n"
+            f"Available tools:\n{tools_block}\n\n"
             "What should I do next? Respond with EITHER:\n"
             "Thought: [your reasoning]\n"
-            "Action: [tool_name]\n"
-            "Action Input: [params]\n"
+            "Action: [tool_name — exactly one name from the list above]\n"
+            "Action Input: [params as JSON]\n"
             "OR, if you already have enough information to respond to the "
             "user (this is the common case for a simple message):\n"
             "Final Answer: [your response to the user, nothing else]"
