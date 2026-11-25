@@ -7,12 +7,18 @@ class GroqLLM:
         self.config = config or {}
         api_key = self.config.get("api_key") or os.getenv("GROQ_API_KEY")
         self.client = AsyncGroq(api_key=api_key)
-        # mixtral-8x7b-32768 was retired by Groq; openai/gpt-oss-120b is
-        # their current recommended default (see console.groq.com/docs/models).
+        # mixtral-8x7b-32768 was retired by Groq. openai/gpt-oss-120b (their
+        # docs' current recommended default) has native tool-calling built
+        # in and will sometimes emit a raw function-call response instead of
+        # following our plain-text ReAct prompt format, even though we never
+        # pass a `tools` param - Groq then rejects it with "Tool choice is
+        # none, but model called a tool" (400). llama-3.3-70b-versatile has
+        # no such built-in tool-calling channel, so it reliably follows our
+        # own ReAct instructions instead.
         # `or` (not .get(key, default)) because callers pass an explicit
         # "model": None when the user left the field blank, and dict.get's
         # default only applies when the key is missing entirely.
-        self.model = self.config.get("model") or "openai/gpt-oss-120b"
+        self.model = self.config.get("model") or "llama-3.3-70b-versatile"
         self.temperature = self.config.get("temperature", 0.7)
 
     async def generate(self, prompt: str) -> str:
