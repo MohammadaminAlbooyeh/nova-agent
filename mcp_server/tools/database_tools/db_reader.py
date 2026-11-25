@@ -1,5 +1,5 @@
 from mcp_server.tools.base_tool import BaseTool
-from mcp_server.utils.validators import validate_identifier, validate_sql_query
+from mcp_server.utils.validators import validate_identifier, validate_sql_query, validate_table_access
 
 
 class DBReaderTool(BaseTool):
@@ -19,14 +19,15 @@ class DBReaderTool(BaseTool):
         }
 
     async def execute(self, table: str, columns: list[str] = None, where: str = None, limit: int = 100) -> str:
-        if not validate_identifier(table):
-            return f"Rejected: invalid table name '{table}'"
+        if not validate_table_access(table):
+            return f"Rejected: invalid or restricted table name '{table}'"
         for column in columns or []:
             if not validate_identifier(column):
                 return f"Rejected: invalid column name '{column}'"
         if where and not validate_sql_query(where):
             return "Rejected: WHERE clause contains a forbidden pattern"
 
+        from sqlalchemy import text
         from backend.models.database import get_session
         cols = ", ".join(columns) if columns else "*"
         query = f"SELECT {cols} FROM {table}"
@@ -35,8 +36,8 @@ class DBReaderTool(BaseTool):
         query += f" LIMIT {limit}"
         session = get_session()
         try:
-            result = session.execute(query)
+            result = session.execute(text(query))
             rows = result.fetchall()
-            return "\n".join(str(dict(row)) for row in rows)
+            return "\n".join(str(dict(row._mapping)) for row in rows)
         finally:
             session.close()

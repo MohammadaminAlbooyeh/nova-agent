@@ -1,5 +1,5 @@
 from mcp_server.tools.base_tool import BaseTool
-from mcp_server.utils.validators import validate_identifier, validate_sql_query
+from mcp_server.utils.validators import validate_identifier, validate_sql_query, validate_table_access
 
 
 class DBWriterTool(BaseTool):
@@ -19,14 +19,15 @@ class DBWriterTool(BaseTool):
         }
 
     async def execute(self, table: str, data: dict, mode: str = "insert", where: str = None) -> str:
-        if not validate_identifier(table):
-            return f"Rejected: invalid table name '{table}'"
+        if not validate_table_access(table):
+            return f"Rejected: invalid or restricted table name '{table}'"
         for column in data.keys():
             if not validate_identifier(column):
                 return f"Rejected: invalid column name '{column}'"
         if where and not validate_sql_query(where):
             return "Rejected: WHERE clause contains a forbidden pattern"
 
+        from sqlalchemy import text
         from backend.models.database import get_session
         session = get_session()
         try:
@@ -39,7 +40,7 @@ class DBWriterTool(BaseTool):
                 query = f"UPDATE {table} SET {set_clause}"
                 if where:
                     query += f" WHERE {where}"
-            session.execute(query, data)
+            session.execute(text(query), data)
             session.commit()
             return f"Successfully {mode}ed data into {table}"
         except Exception as e:

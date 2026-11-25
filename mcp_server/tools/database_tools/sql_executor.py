@@ -20,10 +20,11 @@ class SQLExecutorTool(BaseTool):
         if not validate_sql_query(query):
             return "Rejected: query contains a forbidden schema-altering keyword"
 
+        from sqlalchemy import text
         from backend.models.database import get_session
         session = get_session()
         try:
-            result = session.execute(query, params or {})
+            result = session.execute(text(query), params or {})
             if query.strip().upper().startswith("SELECT"):
                 rows = result.fetchall()
                 return "\n".join(str(row) for row in rows)
