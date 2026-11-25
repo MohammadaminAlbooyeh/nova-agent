@@ -18,7 +18,7 @@ function Sidebar() {
         <div className="nav-rail__logo">
           <Sparkles size={17} />
         </div>
-        <span className="nav-rail__title">MCP Agent</span>
+        <span className="nav-rail__title">Nova</span>
       </div>
 
       <div className="nav-rail__links">

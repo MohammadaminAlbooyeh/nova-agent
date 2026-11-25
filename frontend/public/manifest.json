@@ -1,6 +1,6 @@
 {
-  "short_name": "MCP Agent",
-  "name": "MCP Agent System",
+  "short_name": "Nova",
+  "name": "Nova",
   "start_url": ".",
   "display": "standalone",
   "theme_color": "#1a73e8",
