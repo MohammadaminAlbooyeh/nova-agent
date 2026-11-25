@@ -20,8 +20,14 @@ class Executor:
         for step in plan:
             result = await self._execute_step(step)
             description = step.get('description') if isinstance(step, dict) else str(step)
-            results.append(f"Step: {description}\nResult: {result}")
-        return "\n\n".join(results)
+            results.append((description, result))
+
+        # A single-step plan (the common case for a simple chat message) is
+        # just that step's answer; the "Step/Result" framing only earns its
+        # keep when there's more than one step to tell apart.
+        if len(results) == 1:
+            return results[0][1]
+        return "\n\n".join(f"Step: {description}\nResult: {result}" for description, result in results)
 
     async def execute_tool(self, tool_name: str, params: dict = None) -> str:
         logger.info(f"Executing tool: {tool_name}")

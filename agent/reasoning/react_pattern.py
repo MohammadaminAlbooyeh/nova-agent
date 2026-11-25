@@ -13,7 +13,7 @@ class ReActPattern:
         for i in range(self.max_iterations):
             thought = await self._think(context)
             if self._is_final(thought):
-                return thought
+                return self._extract_final_answer(thought)
             action, params = self._parse_action(thought)
             if not action:
                 return thought
@@ -34,6 +34,16 @@ class ReActPattern:
 
     def _is_final(self, thought: str) -> bool:
         return "Final Answer:" in thought
+
+    def _extract_final_answer(self, thought: str) -> str:
+        # The model sometimes prefaces "Final Answer:" with its own
+        # step-by-step reasoning despite being asked for one or the other;
+        # callers only want the actual answer, not that scratchpad.
+        marker = "Final Answer:"
+        idx = thought.rfind(marker)
+        if idx == -1:
+            return thought.strip()
+        return thought[idx + len(marker):].strip()
 
     def _parse_action(self, thought: str) -> tuple[str, dict]:
         lines = thought.split("\n")
