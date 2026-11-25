@@ -50,7 +50,7 @@ class Agent:
         plan = await self.planner.create_plan(task)
         self.memory.short_term.store("plan", plan)
 
-        if self.planner.is_direct_answer(plan):
+        if self.planner.is_direct_answer(plan, task):
             # Simple conversation: skip the ReAct loop entirely and answer
             # the user's message directly, with recent history as context.
             result = await self._direct_answer(task)
