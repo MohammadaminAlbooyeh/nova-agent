@@ -1,6 +1,7 @@
 from datetime import datetime
 from typing import Optional, List, Dict, Any
 from backend.models.oauth_token import OAuthTokenModel
+from backend.models.oauth_client_credentials import OAuthClientCredentialsModel
 from backend.models.database import get_session
 from backend.utils.encryption import EncryptionUtil
 from agent.utils.logger import get_logger
@@ -149,5 +150,76 @@ class OAuthRepository:
         except Exception as e:
             logger.error(f"Failed to list OAuth tokens: {e}")
             return []
+        finally:
+            db.close()
+
+    async def save_client_credentials(self, session_id: str, provider: str, client_id: str, client_secret: str) -> OAuthClientCredentialsModel:
+        db = get_session()
+        try:
+            existing = db.query(OAuthClientCredentialsModel).filter(
+                OAuthClientCredentialsModel.session_id == session_id,
+                OAuthClientCredentialsModel.provider == provider,
+            ).first()
+
+            encrypted_secret = self.encryption.encrypt(client_secret)
+
+            if existing:
+                existing.client_id = client_id
+                existing.client_secret = encrypted_secret
+                existing.updated_at = datetime.now()
+                db.commit()
+                db.refresh(existing)
+                return existing
+
+            credentials = OAuthClientCredentialsModel(
+                session_id=session_id,
+                provider=provider,
+                client_id=client_id,
+                client_secret=encrypted_secret,
+            )
+            db.add(credentials)
+            db.commit()
+            db.refresh(credentials)
+            logger.info(f"Saved user-supplied OAuth client credentials for {provider} in session {session_id}")
+            return credentials
+        except Exception as e:
+            db.rollback()
+            logger.error(f"Failed to save OAuth client credentials: {e}")
+            raise
+        finally:
+            db.close()
+
+    async def get_client_credentials(self, session_id: str, provider: str) -> Optional[Dict[str, str]]:
+        db = get_session()
+        try:
+            credentials = db.query(OAuthClientCredentialsModel).filter(
+                OAuthClientCredentialsModel.session_id == session_id,
+                OAuthClientCredentialsModel.provider == provider,
+            ).first()
+            if not credentials:
+                return None
+            return {
+                "client_id": credentials.client_id,
+                "client_secret": self.encryption.decrypt(credentials.client_secret),
+            }
+        except Exception as e:
+            logger.error(f"Failed to get OAuth client credentials: {e}")
+            return None
+        finally:
+            db.close()
+
+    async def delete_client_credentials(self, session_id: str, provider: str) -> bool:
+        db = get_session()
+        try:
+            db.query(OAuthClientCredentialsModel).filter(
+                OAuthClientCredentialsModel.session_id == session_id,
+                OAuthClientCredentialsModel.provider == provider,
+            ).delete()
+            db.commit()
+            return True
+        except Exception as e:
+            db.rollback()
+            logger.error(f"Failed to delete OAuth client credentials: {e}")
+            return False
         finally:
             db.close()

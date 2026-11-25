@@ -4,5 +4,9 @@ from backend.models.execution import ExecutionModel
 from backend.models.tool_call import ToolCallModel
 from backend.models.session import SessionModel
 from backend.models.oauth_token import OAuthTokenModel
+from backend.models.oauth_client_credentials import OAuthClientCredentialsModel
 
-__all__ = ["AgentModel", "TaskModel", "ExecutionModel", "ToolCallModel", "SessionModel", "OAuthTokenModel"]
+__all__ = [
+    "AgentModel", "TaskModel", "ExecutionModel", "ToolCallModel", "SessionModel",
+    "OAuthTokenModel", "OAuthClientCredentialsModel",
+]

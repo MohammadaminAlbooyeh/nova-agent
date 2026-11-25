@@ -25,6 +25,11 @@ class AuthorizeRequest(BaseModel):
     provider: str = "gmail"
 
 
+class ClientCredentialsRequest(BaseModel):
+    client_id: Optional[str] = None
+    client_secret: Optional[str] = None
+
+
 class CallbackRequest(BaseModel):
     code: str
     session_id: str
@@ -42,6 +47,7 @@ class AuthStatusResponse(BaseModel):
 async def authorize(
     provider: str,
     session_id: str = Query(...),
+    credentials: ClientCredentialsRequest = ClientCredentialsRequest(),
     gmail_service: GmailOAuthService = Depends(get_gmail_oauth_service),
 ) -> dict:
     """
@@ -72,10 +78,12 @@ async def authorize(
         if provider != "gmail":
             raise HTTPException(status_code=400, detail=f"Provider '{provider}' not supported")
 
-        auth_url = gmail_service.get_auth_url(session_id)
+        auth_url = await gmail_service.get_auth_url(session_id, credentials.client_id, credentials.client_secret)
         return {"auth_url": auth_url, "provider": provider}
     except HTTPException:
         raise
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         logger.error(f"Failed to generate auth URL: {e}")
         raise HTTPException(status_code=500, detail=str(e))

@@ -8,6 +8,8 @@ function OAuthManager({ sessionId }) {
   const [error, setError] = useState(null);
   const [authUrl, setAuthUrl] = useState(null);
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const [clientId, setClientId] = useState(() => localStorage.getItem('mcp_agent_gmail_client_id') || '');
+  const [clientSecret, setClientSecret] = useState(() => localStorage.getItem('mcp_agent_gmail_client_secret') || '');
 
   const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:8000/api';
 
@@ -44,9 +46,13 @@ function OAuthManager({ sessionId }) {
 
     try {
       setLoading(true);
+
+      if (clientId) localStorage.setItem('mcp_agent_gmail_client_id', clientId);
+      if (clientSecret) localStorage.setItem('mcp_agent_gmail_client_secret', clientSecret);
+
       const response = await axios.post(
         `${API_BASE}/oauth/authorize/${provider}`,
-        {},
+        { client_id: clientId || undefined, client_secret: clientSecret || undefined },
         { params: { session_id: sessionId } }
       );
 
@@ -281,6 +287,46 @@ function OAuthManager({ sessionId }) {
               </button>
             )}
           </div>
+        </div>
+      )}
+
+      {/* Bring-your-own OAuth app credentials */}
+      {provider === 'gmail' && !authStatus?.authenticated && (
+        <div style={{
+          padding: '16px',
+          background: '#f5f5f5',
+          borderRadius: '8px',
+          marginBottom: '20px',
+        }}>
+          <p style={{ marginTop: 0, fontSize: '14px', color: '#555' }}>
+            Use your own Google OAuth client (optional). Leave blank to use the
+            app's shared credentials, if the operator configured any.
+          </p>
+          <label style={{ display: 'block', marginBottom: '4px', fontSize: '13px', fontWeight: 'bold' }}>
+            Google Client ID
+          </label>
+          <input
+            type="text"
+            value={clientId}
+            onChange={(e) => setClientId(e.target.value)}
+            placeholder="xxxxxxxxxx.apps.googleusercontent.com"
+            style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #ddd', marginBottom: '12px' }}
+          />
+          <label style={{ display: 'block', marginBottom: '4px', fontSize: '13px', fontWeight: 'bold' }}>
+            Google Client Secret
+          </label>
+          <input
+            type="password"
+            value={clientSecret}
+            onChange={(e) => setClientSecret(e.target.value)}
+            placeholder="GOCSPX-..."
+            style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #ddd' }}
+          />
+          <p style={{ fontSize: '12px', color: '#888', marginBottom: 0, marginTop: '8px' }}>
+            Stored only in this browser's localStorage, and encrypted at rest once sent to the server.
+            Make sure your OAuth client's authorized redirect URI is set to{' '}
+            <code>{window.location.origin}/oauth/callback</code>.
+          </p>
         </div>
       )}
 

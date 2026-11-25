@@ -32,9 +32,25 @@ class GmailOAuthService:
             logger.error("google-auth library not installed")
             self.google_auth = None
 
-    def get_auth_url(self, session_id: str) -> str:
-        if not self.client_id:
-            raise ValueError("Google OAuth not configured")
+    async def _get_client_credentials(self, session_id: str) -> Optional[dict]:
+        stored = await self.repo.get_client_credentials(session_id, "gmail")
+        if stored:
+            return stored
+        if self.client_id and self.client_secret:
+            return {"client_id": self.client_id, "client_secret": self.client_secret}
+        return None
+
+    async def get_auth_url(self, session_id: str, client_id: str = None, client_secret: str = None) -> str:
+        if client_id and client_secret:
+            await self.repo.save_client_credentials(session_id, "gmail", client_id, client_secret)
+        else:
+            credentials = await self._get_client_credentials(session_id)
+            if not credentials:
+                raise ValueError(
+                    "Google OAuth not configured. Provide your own client_id/client_secret, "
+                    "or ask the operator to set GOOGLE_CLIENT_ID/GOOGLE_CLIENT_SECRET."
+                )
+            client_id = credentials["client_id"]
 
         scopes = [
             "https://www.googleapis.com/auth/gmail.send",
@@ -44,17 +60,19 @@ class GmailOAuthService:
 
         auth_url = (
             f"https://accounts.google.com/o/oauth2/v2/auth?"
-            f"client_id={self.client_id}&"
+            f"client_id={client_id}&"
             f"redirect_uri={self.redirect_uri}&"
             f"response_type=code&"
             f"scope={'+'.join(scopes)}&"
             f"access_type=offline&"
+            f"prompt=consent&"
             f"state={session_id}"
         )
         return auth_url
 
     async def exchange_code_for_token(self, code: str, session_id: str) -> bool:
-        if not self.client_id or not self.client_secret:
+        credentials = await self._get_client_credentials(session_id)
+        if not credentials:
             logger.error("OAuth not configured")
             return False
 
@@ -64,8 +82,8 @@ class GmailOAuthService:
             token_url = "https://oauth2.googleapis.com/token"
             data = {
                 "code": code,
-                "client_id": self.client_id,
-                "client_secret": self.client_secret,
+                "client_id": credentials["client_id"],
+                "client_secret": credentials["client_secret"],
                 "redirect_uri": self.redirect_uri,
                 "grant_type": "authorization_code",
             }
@@ -121,13 +139,14 @@ class GmailOAuthService:
             from google.oauth2.credentials import Credentials
             access_token = await self.repo.get_decrypted_access_token(token_model.id)
             refresh_token = await self.repo.get_decrypted_refresh_token(token_model.id)
+            client_credentials = await self._get_client_credentials(session_id)
 
             credentials = Credentials(
                 token=access_token,
                 refresh_token=refresh_token,
                 token_uri="https://oauth2.googleapis.com/token",
-                client_id=self.client_id,
-                client_secret=self.client_secret,
+                client_id=client_credentials["client_id"] if client_credentials else None,
+                client_secret=client_credentials["client_secret"] if client_credentials else None,
             )
 
             return credentials
@@ -142,6 +161,11 @@ class GmailOAuthService:
             logger.error("No refresh token available")
             return False
 
+        credentials = await self._get_client_credentials(session_id)
+        if not credentials:
+            logger.error("OAuth not configured")
+            return False
+
         try:
             import httpx
 
@@ -149,8 +173,8 @@ class GmailOAuthService:
             token_url = "https://oauth2.googleapis.com/token"
 
             data = {
-                "client_id": self.client_id,
-                "client_secret": self.client_secret,
+                "client_id": credentials["client_id"],
+                "client_secret": credentials["client_secret"],
                 "refresh_token": refresh_token,
                 "grant_type": "refresh_token",
             }
@@ -180,6 +204,7 @@ class GmailOAuthService:
             return False
 
     async def disconnect_gmail(self, session_id: str) -> bool:
+        await self.repo.delete_client_credentials(session_id, "gmail")
         return await self.repo.revoke_by_session_and_provider(session_id, "gmail")
 
     async def is_authenticated(self, session_id: str) -> bool:
