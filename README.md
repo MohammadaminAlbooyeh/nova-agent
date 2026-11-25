@@ -419,6 +419,18 @@ The system is configured via:
 
 See [docs/SERVER_GUIDE.md](docs/SERVER_GUIDE.md) for detailed configuration options.
 
+### Database migrations
+
+A brand-new database (including the default local SQLite file and the test
+suite) is created directly from the current models via `init_db()` — no
+migration needed. If you have an **existing** database you want to upgrade
+in place instead of recreating, use Alembic:
+
+```bash
+alembic upgrade head          # apply all pending migrations
+alembic revision --autogenerate -m "describe the change"   # after editing a model
+```
+
 ## 📊 Monitoring & Observability
 
 - **Prometheus Metrics** - Agent performance, API latency, tool execution times

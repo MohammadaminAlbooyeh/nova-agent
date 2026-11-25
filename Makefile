@@ -28,5 +28,11 @@ docker-down:
 init-db:
 	python scripts/init_db.py
 
+migrate:
+	alembic upgrade head
+
+migration:
+	alembic revision --autogenerate -m "$(m)"
+
 seed:
 	python scripts/seed_data.py
