@@ -28,7 +28,7 @@ An AI Agent system built on the Model Context Protocol (MCP). This project demon
 - **🔑 User-Supplied API Keys** - enter your own OpenAI/Claude/Groq key in the frontend Settings page; the key is stored only in the browser's `localStorage` and sent per-request, never persisted on the server
 - **📄 Document Upload** - upload `.txt`, `.md`, `.pdf`, or `.docx` files via `POST /api/documents/upload`; extracted text is stored in the agent's long-term memory as context
 - **🛡️ Agent Policy/Constraints** - configurable `max_steps`, `forbidden_tools`, `forbidden_actions`, and `allowed_domains`, enforced in `agent/core/policy.py` and checked on every tool call (not just declared in config)
-- **🪶 Lightweight Local Mode** - `docker-compose.local.yml` runs just the MCP server, backend, and frontend (SQLite + in-process memory, no Postgres/Redis/Prometheus/Grafana required); the full `docker-compose.yml` with the monitoring stack remains available for anyone who wants it
+- **🪶 Lightweight Local Mode** - `docker-compose.local.yml` runs just the MCP server, backend, and frontend (SQLite + in-process memory, no Postgres/Redis/Prometheus/Grafana required); layer `docker-compose.monitoring.yml` on top if you want Prometheus/Grafana without the full stack, or use the full `docker-compose.yml` directly
 
 ## ⚠️ Known Security Limitations
 
@@ -438,6 +438,10 @@ alembic revision --autogenerate -m "describe the change"   # after editing a mod
 - **Structured Logging** - Detailed logs for debugging and audit trails
 
 Access Grafana at http://localhost:3001 after running `docker-compose up`.
+
+In local mode (`docker-compose.local.yml`, no Postgres/Redis), layer the
+monitoring overlay on top instead of switching to the full stack:
+`docker compose -f docker-compose.local.yml -f docker-compose.monitoring.yml up`.
 
 ## 🤝 Contributing
 

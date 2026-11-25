@@ -1,0 +1,27 @@
+version: '3.8'
+
+# Optional monitoring overlay: adds Prometheus + Grafana without requiring
+# the full docker-compose.yml stack (Postgres/Redis). Layer it on top of
+# either compose file, e.g.:
+#   docker compose -f docker-compose.local.yml -f docker-compose.monitoring.yml up
+# Prometheus scrapes backend:8001/metrics, which both compose files expose
+# under the same service name.
+
+services:
+  prometheus:
+    image: prom/prometheus
+    container_name: prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+    depends_on:
+      - backend
+
+  grafana:
+    image: grafana/grafana
+    container_name: grafana
+    ports:
+      - "3001:3000"
+    volumes:
+      - ./monitoring/grafana_dashboards:/var/lib/grafana/dashboards
