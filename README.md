@@ -5,7 +5,7 @@ An AI Agent system built on the Model Context Protocol (MCP). This project demon
 ## ✨ Key Features
 
 ### Core Capabilities
-- **🔧 MCP Server** with 15+ specialized tools covering web, database, file, email, API, and code operations
+- **🔧 MCP Server** with 22 specialized tools covering web, database, file, email, API, and code operations
 - **🧠 Intelligent Reasoning Agent** with ReAct pattern for multi-step problem-solving
 - **💾 Dual Memory System** with short-term context and long-term knowledge persistence
 - **🔄 Chain-of-Thought Reasoning** with self-reflection and adaptive learning
@@ -212,7 +212,7 @@ Want the full stack (Postgres, Redis, Prometheus, Grafana) instead? Use `docker-
 
 ```
 mcp_agent_system/
-├── mcp_server/          # MCP Protocol Server (15+ tools)
+├── mcp_server/          # MCP Protocol Server (22 tools)
 │   ├── tools/           # Web, database, file, email, code tools
 │   ├── handlers/        # Tool request handlers
 │   ├── resources/       # MCP resource definitions
