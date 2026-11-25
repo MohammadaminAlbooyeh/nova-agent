@@ -12,7 +12,7 @@ LLM_CONFIG = {
         "api_key_env": "ANTHROPIC_API_KEY",
     },
     "groq": {
-        "model": "mixtral-8x7b-32768",
+        "model": "openai/gpt-oss-120b",
         "temperature": 0.7,
         "max_tokens": 4096,
         "api_key_env": "GROQ_API_KEY",

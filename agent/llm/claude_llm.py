@@ -8,7 +8,7 @@ class ClaudeLLM:
         self.config = config or {}
         api_key = self.config.get("api_key") or os.getenv("ANTHROPIC_API_KEY")
         self.client = anthropic.AsyncAnthropic(api_key=api_key)
-        self.model = self.config.get("model", "claude-3-opus-20240229")
+        self.model = self.config.get("model") or "claude-3-opus-20240229"
         self.temperature = self.config.get("temperature", 0.7)
         # Some anthropic SDK versions have dropped `temperature` from
         # messages.create(); detect support instead of hardcoding it so

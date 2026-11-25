@@ -5,7 +5,7 @@ class LocalLLM:
     def __init__(self, config: dict = None):
         self.config = config or {}
         self.base_url = self.config.get("base_url", "http://localhost:11434")
-        self.model = self.config.get("model", "llama2")
+        self.model = self.config.get("model") or "llama2"
         self.client = httpx.AsyncClient(base_url=self.base_url)
 
     async def generate(self, prompt: str) -> str:
