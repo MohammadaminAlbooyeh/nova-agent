@@ -42,29 +42,43 @@ Be aware of these gaps before treating this as "production-ready" or exposing it
 ## 🚀 Quick Start
 
 ### Prerequisites
-- Docker and Docker Compose
-- Python 3.10+
-- API keys for LLM providers (OpenAI, Claude, etc.)
+- Python 3.10+ and Node.js 18+ (for running directly), **or** Docker and Docker Compose
+- An API key from an LLM provider — [Groq](https://console.groq.com) has a free tier and is the easiest to start with; OpenAI/Claude/local (Ollama) also work. You can also add this later from the frontend's Connections page instead of `.env`.
 
-### Installation
+### Option 1: Docker (lightweight local mode, no Postgres/Redis required)
 
 ```bash
-# Clone the repository
-git clone <repo-url>
-cd mcp_agent_system
-
-# Setup environment
+git clone https://github.com/MohammadaminAlbooyeh/nova-agent.git
+cd nova-agent
 cp .env.example .env
-# Edit .env with your API keys
-
-# Start the system
-docker-compose up
+docker compose -f docker-compose.local.yml up
 ```
 
-The system will be available at:
-- **API**: http://localhost:8000
+### Option 2: Run directly (no Docker)
+
+```bash
+git clone https://github.com/MohammadaminAlbooyeh/nova-agent.git
+cd nova-agent
+cp .env.example .env
+
+# Backend
+python3 -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt
+uvicorn backend.main:app --host 0.0.0.0 --port 8001 &
+
+# Frontend (separate terminal)
+cd frontend
+npm install
+REACT_APP_API_URL=http://localhost:8001/api npm start
+```
+
+Either way, the system will be available at:
+- **Backend API**: http://localhost:8001 (docs at `/docs`)
 - **Frontend**: http://localhost:3000
-- **Grafana**: http://localhost:3001 (credentials in docker-compose.yml)
+
+Open the frontend and go to **Connections** to add your LLM API key (and, optionally, Gmail credentials) — no `.env` editing required for that part.
+
+Want the full stack (Postgres, Redis, Prometheus, Grafana) instead? Use `docker-compose.yml` in place of `docker-compose.local.yml`, and layer `docker-compose.monitoring.yml` on top of either one if you just want metrics without the rest.
 
 ## 🔗 System Connection Diagram
 
