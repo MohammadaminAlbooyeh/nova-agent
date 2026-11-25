@@ -6,7 +6,7 @@ const links = [
   { to: '/', label: 'Today', icon: Home, end: true },
   { to: '/tasks', label: 'Tasks', icon: CheckSquare },
   { to: '/tools', label: 'Tools', icon: Wrench },
-  { to: '/integrations', label: 'Integrations', icon: Plug },
+  { to: '/connections', label: 'Connections', icon: Plug },
   { to: '/monitoring', label: 'Activity', icon: Activity },
   { to: '/settings', label: 'Settings', icon: SettingsIcon },
 ];

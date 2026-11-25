@@ -7,7 +7,7 @@ import TaskDetailPage from './pages/TaskDetailPage';
 import ToolsPage from './pages/ToolsPage';
 import MonitoringPage from './pages/MonitoringPage';
 import SettingsPage from './pages/SettingsPage';
-import IntegrationsPage from './pages/IntegrationsPage';
+import ConnectionsPage from './pages/ConnectionsPage';
 import OAuthCallbackPage from './pages/OAuthCallbackPage';
 import './App.css';
 
@@ -25,7 +25,8 @@ function MainContent() {
         <Route path="/tools" element={<ToolsPage />} />
         <Route path="/monitoring" element={<MonitoringPage />} />
         <Route path="/settings" element={<SettingsPage />} />
-        <Route path="/integrations" element={<IntegrationsPage />} />
+        <Route path="/connections" element={<ConnectionsPage />} />
+        <Route path="/integrations" element={<Navigate to="/connections" replace />} />
         <Route path="/oauth/callback" element={<OAuthCallbackPage />} />
       </Routes>
     </main>

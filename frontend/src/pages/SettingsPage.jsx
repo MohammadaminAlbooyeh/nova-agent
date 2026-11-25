@@ -108,45 +108,10 @@ function SettingsPage() {
   return (
     <div>
       <h1>Settings</h1>
-      <p className="page-subtitle">Configure your LLM provider, agent constraints, and knowledge base.</p>
-
-      <div className="card">
-        <h2>LLM Provider &amp; API Key</h2>
-        <p className="section-description">
-          Your API key is stored only in this browser's local storage and sent directly with each
-          agent run. It is never saved on the server.
-        </p>
-        <div className="form-row">
-          <div className="form-group">
-            <label>Provider</label>
-            <select value={settings.llmProvider} onChange={e => update('llmProvider', e.target.value)}>
-              <option value="openai">OpenAI</option>
-              <option value="claude">Claude</option>
-              <option value="groq">Groq</option>
-              <option value="local">Local</option>
-            </select>
-          </div>
-          <div className="form-group">
-            <label>Model (optional)</label>
-            <input
-              type="text"
-              placeholder="e.g. claude-opus-4-20250514, gpt-4"
-              value={settings.model}
-              onChange={e => update('model', e.target.value)}
-            />
-          </div>
-        </div>
-        <div className="form-group">
-          <label>API Key</label>
-          <input
-            type="password"
-            placeholder="sk-..."
-            value={settings.apiKey}
-            onChange={e => update('apiKey', e.target.value)}
-            autoComplete="off"
-          />
-        </div>
-      </div>
+      <p className="page-subtitle">Agent constraints and knowledge base.</p>
+      <p className="hint">
+        Looking for your LLM API key or Gmail connection? Those moved to <strong>Connections</strong>.
+      </p>
 
       <div className="card">
         <h2>Agent Constraints</h2>
