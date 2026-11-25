@@ -33,10 +33,11 @@ class Planner:
     def __init__(self, agent):
         self.agent = agent
 
-    async def create_plan(self, task: str) -> list[dict]:
+    async def create_plan(self, task: str, document_context: str = "") -> list[dict]:
         logger.info(f"Creating plan for: {task}")
         tools = await self.agent.get_available_tools()
         prompt = (
+            f"{document_context}"
             f"Task: {task}\n\n"
             f"Available tools: {[t.name for t in tools]}\n\n"
             "Decide how to handle this task.\n\n"

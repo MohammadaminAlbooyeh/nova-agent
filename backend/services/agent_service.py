@@ -35,6 +35,11 @@ class AgentService:
             # the whole client, so this request's own policy (forbidden
             # tools, allowed domains, ...) still applies to its calls.
             orchestrator.agent.mcp_client.session = self.orchestrator.agent.mcp_client.session
+            # Same reasoning as above: a fresh Orchestrator's MemoryManager
+            # starts empty, so without this an uploaded document (stored
+            # via POST /documents/upload into the *default* orchestrator's
+            # memory) would be invisible to every actual chat request.
+            orchestrator.agent.memory = self.orchestrator.agent.memory
             return await orchestrator.run_task(task, workflow)
         return await self.orchestrator.run_task(task, workflow)
 

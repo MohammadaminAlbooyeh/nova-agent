@@ -47,13 +47,14 @@ class Agent:
         logger.info(f"Agent received task: {task}" + (f" (session: {self.session_id})" if self.session_id else ""))
 
         self.memory.short_term.store("current_task", task)
-        plan = await self.planner.create_plan(task)
+        document_context = self._uploaded_documents_block()
+        plan = await self.planner.create_plan(task, document_context=document_context)
         self.memory.short_term.store("plan", plan)
 
         if self.planner.is_direct_answer(plan, task):
             # Simple conversation: skip the ReAct loop entirely and answer
             # the user's message directly, with recent history as context.
-            result = await self._direct_answer(task)
+            result = await self._direct_answer(task, document_context)
         else:
             result = await self.executor.execute_plan(plan, original_task=task)
 
@@ -64,7 +65,7 @@ class Agent:
         await self._save_session_state()
         return result
 
-    async def _direct_answer(self, task: str) -> str:
+    async def _direct_answer(self, task: str, document_context: str = "") -> str:
         history_lines = []
         for h in self.history[-5:]:
             history_lines.append(f"User: {h['task']}\nAssistant: {h['result']}")
@@ -72,12 +73,26 @@ class Agent:
             "Previous conversation:\n" + "\n\n".join(history_lines) + "\n\n"
         ) if history_lines else ""
         prompt = (
+            f"{document_context}"
             f"{history_block}"
             f"User message: {task}\n\n"
             "Respond directly and concisely to the user's message. "
             "Answer the question itself; do not describe steps or plans."
         )
         return await self.llm.generate(prompt)
+
+    def _uploaded_documents_block(self, limit: int = 3, max_chars: int = 6000) -> str:
+        """Recently uploaded documents (POST /documents/upload), so tasks
+        like "summarize the file I just uploaded" actually have the text
+        to work with instead of the model guessing from the filename alone."""
+        uploads = self.memory.long_term.get_recent_uploads(limit=limit)
+        if not uploads:
+            return ""
+        blocks = []
+        for filename, text in uploads:
+            truncated = text if len(text) <= max_chars else text[:max_chars] + "... [truncated]"
+            blocks.append(f"--- {filename} ---\n{truncated}")
+        return "Recently uploaded document(s):\n" + "\n\n".join(blocks) + "\n\n"
 
     async def restore_from_session(self) -> bool:
         if not self.session_id or not self.session_manager:

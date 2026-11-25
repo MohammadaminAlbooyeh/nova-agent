@@ -173,6 +173,19 @@ class LongTermMemory:
     def get_all(self) -> dict:
         return {key: mem.value for key, mem in self._storage.items()}
 
+    def get_recent_uploads(self, limit: int = 3) -> List[Tuple[str, str]]:
+        """Most recently uploaded documents (see POST /documents/upload) as
+        (filename, text) pairs, newest first."""
+        uploads = [
+            mem for mem in self._storage.values()
+            if (mem.metadata or {}).get("source") == "upload"
+        ]
+        uploads.sort(key=lambda m: m.timestamp, reverse=True)
+        return [
+            (mem.metadata.get("filename", mem.key), mem.value)
+            for mem in uploads[:limit]
+        ]
+
     def clear(self):
         self._storage.clear()
         if self.vector_store:
