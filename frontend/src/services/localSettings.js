@@ -5,7 +5,7 @@ const DEFAULTS = {
   apiKey: '',
   model: '',
   maxSteps: 20,
-  forbiddenTools: ['code_executor'],
+  forbiddenTools: ['code_executor', 'sql_executor', 'db_writer', 'file_manager'],
   allowedDomains: [],
   theme: 'light',
 };

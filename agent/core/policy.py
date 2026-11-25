@@ -15,8 +15,9 @@ class AgentPolicy:
     def __init__(self, config: dict = None):
         config = config or {}
         self.max_steps: int = config.get("max_steps", 20)
+        default_forbidden_tools = ["code_executor", "sql_executor", "db_writer", "file_manager"]
         self.forbidden_tools: set[str] = set(
-            config.get("forbidden_tools", ["code_executor"])
+            config.get("forbidden_tools", default_forbidden_tools)
         )
         default_forbidden_actions = {"file_manager": {"delete"}}
         self.forbidden_actions: dict[str, set[str]] = {

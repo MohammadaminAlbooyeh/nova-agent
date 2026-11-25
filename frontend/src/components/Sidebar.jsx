@@ -1,11 +1,12 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { Sparkles, Home, CheckSquare, Wrench, Activity, Settings as SettingsIcon } from 'lucide-react';
+import { Sparkles, Home, CheckSquare, Wrench, Activity, Plug, Settings as SettingsIcon } from 'lucide-react';
 
 const links = [
   { to: '/', label: 'Today', icon: Home, end: true },
   { to: '/tasks', label: 'Tasks', icon: CheckSquare },
   { to: '/tools', label: 'Tools', icon: Wrench },
+  { to: '/integrations', label: 'Integrations', icon: Plug },
   { to: '/monitoring', label: 'Activity', icon: Activity },
   { to: '/settings', label: 'Settings', icon: SettingsIcon },
 ];
