@@ -28,6 +28,13 @@ class AgentService:
         if config:
             orchestrator = Orchestrator(config)
             self._register_workflows(orchestrator)
+            # Reuse the long-lived MCP session from the app lifespan's
+            # connected client: a fresh Orchestrator's MCPClient is never
+            # connect()-ed, so without this its agent sees an empty tool
+            # list and refuses any tool work. Share just the session, not
+            # the whole client, so this request's own policy (forbidden
+            # tools, allowed domains, ...) still applies to its calls.
+            orchestrator.agent.mcp_client.session = self.orchestrator.agent.mcp_client.session
             return await orchestrator.run_task(task, workflow)
         return await self.orchestrator.run_task(task, workflow)
 

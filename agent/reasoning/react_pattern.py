@@ -21,10 +21,12 @@ class ReActPattern:
 
         for i in range(self.max_iterations):
             thought = await self._think(context, tools_block)
+            logger.info(f"ReAct iteration {i}: {thought[:500]!r}")
             if self._is_final(thought):
                 return self._extract_final_answer(thought)
             action, params = self._parse_action(thought)
             if not action:
+                logger.info("ReAct: no Action parsed, treating thought as final answer")
                 return self._extract_final_answer(thought)
             observation = await self._act(action, params)
             context += f"\nThought: {thought}\nAction: {action}\nObservation: {observation}"
