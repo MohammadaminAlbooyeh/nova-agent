@@ -1,6 +1,8 @@
 import re
 from urllib.parse import urlparse
 
+import sqlparse
+
 
 def validate_url(url: str) -> bool:
     try:
@@ -25,16 +27,30 @@ SENSITIVE_TABLES = {"oauth_tokens", "oauth_client_credentials", "sessions"}
 
 
 def validate_sql_query(query: str) -> bool:
-    upper = query.strip().upper()
-    for keyword in FORBIDDEN_SQL_KEYWORDS:
-        if re.search(rf"\b{keyword}\b", upper):
-            return False
-    # Reject stacked statements / comment-based injection techniques.
-    if ";" in query.strip().rstrip(";") or "--" in query or "/*" in query:
+    """Tokenize the query so keyword/table checks only look at actual SQL
+    tokens, not at text that happens to appear inside a string literal
+    (e.g. WHERE name = 'sessions_backup' must not be rejected, while
+    SELECT * FROM sessions must be).
+    """
+    statements = sqlparse.parse(query)
+    # More than one statement means a stacked statement (e.g. "...; DROP ...").
+    if len(statements) != 1:
         return False
-    for table in SENSITIVE_TABLES:
-        if re.search(rf"\b{table}\b", query, re.IGNORECASE):
+
+    tokens = list(statements[0].flatten())
+    for token in tokens:
+        if token.ttype in (sqlparse.tokens.Comment.Single, sqlparse.tokens.Comment.Multiline):
             return False
+        if token.ttype is sqlparse.tokens.Punctuation and token.value == ";":
+            return False
+
+        value_upper = token.value.upper()
+        if token.ttype in (sqlparse.tokens.Keyword, sqlparse.tokens.Keyword.DDL, sqlparse.tokens.DDL):
+            if value_upper in FORBIDDEN_SQL_KEYWORDS:
+                return False
+        if token.ttype is sqlparse.tokens.Name and value_upper.lower() in SENSITIVE_TABLES:
+            return False
+
     return True
 
 

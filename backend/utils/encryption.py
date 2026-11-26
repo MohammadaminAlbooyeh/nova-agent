@@ -10,44 +10,29 @@ class EncryptionUtil:
         self.key = key or os.getenv("ENCRYPTION_KEY")
 
         if not self.key:
-            self.key = Fernet.generate_key().decode()
-            logger.warning("No ENCRYPTION_KEY provided, using generated key. Please set ENCRYPTION_KEY env var for production")
+            # A random per-process key would silently make every previously
+            # encrypted token undecryptable after a restart or on another
+            # instance, so refuse to start instead of generating one.
+            raise ValueError(
+                "ENCRYPTION_KEY env var is not set. Generate one with "
+                "EncryptionUtil.generate_key() and set it before starting the service."
+            )
 
-        try:
-            if isinstance(self.key, str):
-                self.key = self.key.encode()
-            self.cipher = Fernet(self.key)
-        except Exception as e:
-            logger.error(f"Failed to initialize encryption: {e}")
-            self.cipher = None
+        if isinstance(self.key, str):
+            self.key = self.key.encode()
+        self.cipher = Fernet(self.key)
 
     def encrypt(self, data: str) -> str:
-        if not self.cipher:
-            logger.warning("Encryption not available, returning plaintext")
-            return data
-
-        try:
-            if isinstance(data, str):
-                data = data.encode()
-            encrypted = self.cipher.encrypt(data)
-            return encrypted.decode()
-        except Exception as e:
-            logger.error(f"Encryption failed: {e}")
-            return data
+        if isinstance(data, str):
+            data = data.encode()
+        encrypted = self.cipher.encrypt(data)
+        return encrypted.decode()
 
     def decrypt(self, encrypted_data: str) -> str:
-        if not self.cipher:
-            logger.warning("Decryption not available, returning as-is")
-            return encrypted_data
-
-        try:
-            if isinstance(encrypted_data, str):
-                encrypted_data = encrypted_data.encode()
-            decrypted = self.cipher.decrypt(encrypted_data)
-            return decrypted.decode()
-        except Exception as e:
-            logger.error(f"Decryption failed: {e}")
-            return ""
+        if isinstance(encrypted_data, str):
+            encrypted_data = encrypted_data.encode()
+        decrypted = self.cipher.decrypt(encrypted_data)
+        return decrypted.decode()
 
     @staticmethod
     def generate_key() -> str:

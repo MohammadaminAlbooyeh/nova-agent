@@ -65,13 +65,13 @@ class MCPClient:
         return result
 
     async def close(self):
+        # self.session is ClientSession.__aenter__()'s return value, not an
+        # object with its own close() - tearing it down is _session_cm's job.
         if self._session_cm:
             await self._session_cm.__aexit__(None, None, None)
             self._session_cm = None
         if self._stdio_transport:
             await self._stdio_transport.__aexit__(None, None, None)
             self._stdio_transport = None
-        if self.session:
-            await self.session.close()
-            self.session = None
+        self.session = None
         logger.info("MCP Client disconnected")

@@ -77,17 +77,26 @@ class ReActPattern:
         return thought[idx + len(marker):].strip()
 
     def _parse_action(self, thought: str) -> tuple[str, dict]:
+        import json
+
         lines = thought.split("\n")
-        action, params = None, {}
+        action = None
         for line in lines:
             if line.startswith("Action:"):
                 action = line.split(":", 1)[1].strip()
-            elif line.startswith("Action Input:"):
-                import json
-                try:
-                    params = json.loads(line.split(":", 1)[1].strip())
-                except json.JSONDecodeError:
-                    params = {"input": line.split(":", 1)[1].strip()}
+
+        params = {}
+        marker = "Action Input:"
+        idx = thought.find(marker)
+        if idx != -1:
+            remainder = thought[idx + len(marker):].strip()
+            # The model can return a JSON object spanning multiple lines, so
+            # decode from the start of the remainder rather than a single line.
+            try:
+                decoder = json.JSONDecoder()
+                params, _ = decoder.raw_decode(remainder)
+            except json.JSONDecodeError:
+                params = {"input": remainder.split("\n", 1)[0].strip()}
         return action, params
 
     async def _act(self, action: str, params: dict) -> str:
