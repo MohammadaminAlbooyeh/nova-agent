@@ -1,8 +1,9 @@
 from fastapi import APIRouter, HTTPException, Depends, Query
-from pydantic import BaseModel
-from typing import Optional
+from pydantic import BaseModel, Field
+from typing import Optional, List
 from backend.services.gmail_oauth_service import GmailOAuthService
 from backend.services.oauth_repository import OAuthRepository
+from backend.services.gmail_filter_repository import GmailFilterRepository
 from backend.utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -10,6 +11,7 @@ router = APIRouter(prefix="/oauth", tags=["oauth"])
 
 _gmail_oauth_service = None
 _oauth_repository = None
+_gmail_filter_repository = None
 
 
 def get_gmail_oauth_service() -> GmailOAuthService:
@@ -18,6 +20,13 @@ def get_gmail_oauth_service() -> GmailOAuthService:
         _oauth_repository = OAuthRepository()
         _gmail_oauth_service = GmailOAuthService(_oauth_repository)
     return _gmail_oauth_service
+
+
+def get_gmail_filter_repository() -> GmailFilterRepository:
+    global _gmail_filter_repository
+    if _gmail_filter_repository is None:
+        _gmail_filter_repository = GmailFilterRepository()
+    return _gmail_filter_repository
 
 
 class AuthorizeRequest(BaseModel):
@@ -41,6 +50,19 @@ class AuthStatusResponse(BaseModel):
     user_email: Optional[str]
     is_expired: Optional[bool]
     expires_at: Optional[str]
+
+
+class GmailFiltersRequest(BaseModel):
+    ignore_terms: Optional[List[str]] = Field(
+        default=None, description="Senders/subject keywords the agent should skip (e.g. newsletters, noreply)"
+    )
+    important_terms: Optional[List[str]] = Field(
+        default=None, description="Senders/subject keywords that mark an email as important"
+    )
+    only_important: Optional[bool] = Field(
+        default=None, description="If true, the agent only surfaces emails matching important_terms"
+    )
+    max_results: Optional[int] = Field(default=None, description="Max emails to scan per read")
 
 
 @router.post("/authorize/{provider}")
@@ -262,4 +284,44 @@ async def refresh_token(
         raise
     except Exception as e:
         logger.error(f"Failed to refresh token: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/gmail/filters")
+async def get_gmail_filters(
+    session_id: str = Query(...),
+    filter_repo: GmailFilterRepository = Depends(get_gmail_filter_repository),
+) -> dict:
+    """
+    Get the Gmail reading filters configured for this session.
+
+    These control which emails the agent is allowed to treat as "important"
+    versus skip as noise (newsletters, no-reply senders, etc.) when it reads
+    the inbox.
+    """
+    try:
+        return filter_repo.get(session_id)
+    except Exception as e:
+        logger.error(f"Failed to get Gmail filters: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/gmail/filters")
+async def save_gmail_filters(
+    request: GmailFiltersRequest,
+    session_id: str = Query(...),
+    filter_repo: GmailFilterRepository = Depends(get_gmail_filter_repository),
+) -> dict:
+    """
+    Save Gmail reading filters for this session.
+
+    Only fields provided in the request are updated; omitted fields keep
+    their previous value (or the default on first save).
+    """
+    try:
+        updates = {k: v for k, v in request.model_dump().items() if v is not None}
+        saved = filter_repo.save(session_id, updates)
+        return saved
+    except Exception as e:
+        logger.error(f"Failed to save Gmail filters: {e}")
         raise HTTPException(status_code=500, detail=str(e))

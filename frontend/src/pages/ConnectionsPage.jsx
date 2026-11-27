@@ -21,6 +21,10 @@ function ConnectionsPage() {
   const [gmailError, setGmailError] = useState(null);
   const [gmailMessage, setGmailMessage] = useState(null);
 
+  const [filters, setFilters] = useState(null);
+  const [filtersSaved, setFiltersSaved] = useState(false);
+  const [filtersError, setFiltersError] = useState(null);
+
   const updateLlm = (field, value) => {
     setSettings(prev => ({ ...prev, [field]: value }));
     setLlmSaved(false);
@@ -60,6 +64,46 @@ function ConnectionsPage() {
     const interval = setInterval(checkGmailStatus, 10000);
     return () => clearInterval(interval);
   }, [sessionId, checkGmailStatus]);
+
+  const loadFilters = React.useCallback(() => {
+    if (!sessionId) return;
+    axios
+      .get(`${API_BASE}/oauth/gmail/filters`, { params: { session_id: sessionId } })
+      .then((response) => setFilters(response.data))
+      .catch((err) => setFiltersError(err.response?.data?.detail || err.message));
+  }, [sessionId]);
+
+  useEffect(() => {
+    if (sessionId && authStatus?.authenticated) {
+      loadFilters();
+    }
+  }, [sessionId, authStatus?.authenticated, loadFilters]);
+
+  const updateFilterText = (field, value) => {
+    setFilters(prev => ({ ...prev, [field]: value.split(',').map(s => s.trim()).filter(Boolean) }));
+    setFiltersSaved(false);
+  };
+
+  const saveFilters = async () => {
+    if (!sessionId || !filters) return;
+    setFiltersError(null);
+    try {
+      const response = await axios.post(
+        `${API_BASE}/oauth/gmail/filters`,
+        {
+          ignore_terms: filters.ignore_terms,
+          important_terms: filters.important_terms,
+          only_important: filters.only_important,
+          max_results: filters.max_results,
+        },
+        { params: { session_id: sessionId } }
+      );
+      setFilters(response.data);
+      setFiltersSaved(true);
+    } catch (err) {
+      setFiltersError(err.response?.data?.detail || err.message);
+    }
+  };
 
   const connectGmail = async () => {
     if (!sessionId) return;
@@ -187,7 +231,8 @@ function ConnectionsPage() {
               </button>
             </div>
           </>
-        ) : (
+        ) : null}
+        {authStatus?.authenticated ? null : (
           <>
             <div className="form-group">
               <label>Google Client ID</label>
@@ -220,6 +265,71 @@ function ConnectionsPage() {
           </>
         )}
       </div>
+
+      {authStatus?.authenticated && (
+        <div className="card">
+          <h2>Email Filters</h2>
+          <p className="section-description">
+            Control which emails the agent is allowed to act on. Terms here match against the
+            sender and subject. Anything matching "Ignore" is skipped entirely (so the agent
+            doesn't waste time on newsletters/no-reply mail); anything matching "Important" is
+            flagged and written to a file you can review.
+          </p>
+
+          {filtersError && <div className="banner banner-error">{filtersError}</div>}
+
+          {!filters ? (
+            <p className="hint">Loading filters...</p>
+          ) : (
+            <>
+              <div className="form-group">
+                <label>Ignore (comma-separated senders/keywords)</label>
+                <input
+                  type="text"
+                  placeholder="noreply, newsletter, promotions"
+                  value={(filters.ignore_terms || []).join(', ')}
+                  onChange={e => updateFilterText('ignore_terms', e.target.value)}
+                />
+              </div>
+              <div className="form-group">
+                <label>Important (comma-separated senders/keywords)</label>
+                <input
+                  type="text"
+                  placeholder="boss@company.com, invoice, urgent"
+                  value={(filters.important_terms || []).join(', ')}
+                  onChange={e => updateFilterText('important_terms', e.target.value)}
+                />
+              </div>
+              <div className="form-row">
+                <label>
+                  <input
+                    type="checkbox"
+                    checked={!!filters.only_important}
+                    onChange={e => { setFilters(prev => ({ ...prev, only_important: e.target.checked })); setFiltersSaved(false); }}
+                  />
+                  {' '}Only show emails matching "Important"
+                </label>
+              </div>
+              <div className="form-group">
+                <label>Max emails to scan per read</label>
+                <input
+                  type="number"
+                  min="1"
+                  max="100"
+                  value={filters.max_results || 10}
+                  onChange={e => { setFilters(prev => ({ ...prev, max_results: Number(e.target.value) })); setFiltersSaved(false); }}
+                />
+              </div>
+              <button className="btn-primary" onClick={saveFilters}>Save Filters</button>
+              {filtersSaved && <div className="banner banner-success">Saved.</div>}
+              <p className="hint">
+                Emails flagged as important are written to{' '}
+                <code>data/gmail_important_{sessionId}.json</code> each time the agent reads the inbox.
+              </p>
+            </>
+          )}
+        </div>
+      )}
     </div>
   );
 }
