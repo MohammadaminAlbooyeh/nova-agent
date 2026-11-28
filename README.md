@@ -5,7 +5,7 @@ An AI Agent system built on the Model Context Protocol (MCP). This project demon
 ## ✨ Key Features
 
 ### Core Capabilities
-- **🔧 MCP Server** with 22 specialized tools covering web, database, file, email, API, and code operations
+- **🔧 MCP Server** with 24 specialized tools covering web, database, file, email, API, and code operations
 - **🧠 Intelligent Reasoning Agent** with ReAct pattern for multi-step problem-solving
 - **💾 Dual Memory System** with short-term context and long-term knowledge persistence
 - **🔄 Chain-of-Thought Reasoning** with self-reflection and adaptive learning
@@ -13,7 +13,7 @@ An AI Agent system built on the Model Context Protocol (MCP). This project demon
 
 ### Integration & Deployment
 - **⚡ REST API** (FastAPI) for seamless external system integration
-- **🎨 React Frontend** for real-time agent monitoring, control, and visualization
+- **🎨 Angular Frontend** (standalone components + signals) for chat, agent monitoring, control, and visualization
 - **🤖 Multiple LLM Support** (OpenAI, Claude, Groq, local models)
 - **🐳 Docker** containerization for consistent development and deployment
 - **📊 Monitoring Stack** with Prometheus metrics and Grafana dashboards
@@ -26,6 +26,7 @@ An AI Agent system built on the Model Context Protocol (MCP). This project demon
 
 ### User-Supplied Configuration (Local Agent Mode)
 - **🔑 User-Supplied API Keys** - enter your own OpenAI/Claude/Groq key in the frontend's Connections page; the key is stored only in the browser's `localStorage` and sent per-request, never persisted on the server. **Don't have one?** [Groq](https://console.groq.com) gives you a free API key with no credit card required - use that to get started at zero cost.
+- **✉️ Gmail Auto-reply Rules** - on the Connections page, tick which emails the agent may answer (unread, important, not newsletters/automated mail, allowed senders, per-run cap) and whether replies are saved as Gmail drafts (default) or sent. The rules are enforced inside the `gmail_reply_candidates` / `gmail_reply` tools, not just in the prompt
 - **📄 Document Upload** - upload `.txt`, `.md`, `.pdf`, or `.docx` files via `POST /api/documents/upload`; extracted text is stored in the agent's long-term memory as context
 - **🛡️ Agent Policy/Constraints** - configurable `max_steps`, `forbidden_tools`, `forbidden_actions`, and `allowed_domains`, enforced in `agent/core/policy.py` and checked on every tool call (not just declared in config)
 - **🪶 Lightweight Local Mode** - `docker-compose.local.yml` runs just the MCP server, backend, and frontend (SQLite + in-process memory, no Postgres/Redis/Prometheus/Grafana required); layer `docker-compose.monitoring.yml` on top if you want Prometheus/Grafana without the full stack, or use the full `docker-compose.yml` directly
@@ -42,7 +43,7 @@ Be aware of these gaps before treating this as "production-ready" or exposing it
 ## 🚀 Quick Start
 
 ### Prerequisites
-- Python 3.10+ and Node.js 18+ (for running directly), **or** Docker and Docker Compose
+- Python 3.10+ and Node.js 22+ (for running directly), **or** Docker and Docker Compose
 - An API key from an LLM provider. **For a free API key, use [Groq](https://console.groq.com)** - no credit card required. OpenAI/Claude/local (Ollama) also work, but aren't free. You can add the key later from the frontend's Connections page instead of `.env`.
 
 ### Option 1: Docker (lightweight local mode, no Postgres/Redis required)
@@ -67,9 +68,9 @@ pip install -r requirements.txt
 uvicorn backend.main:app --host 0.0.0.0 --port 8001 &
 
 # Frontend (separate terminal)
-cd frontend
+cd frontend-angular
 npm install
-REACT_APP_API_URL=http://localhost:8001/api npm start
+npm start   # serves on http://localhost:3000 and proxies /api to the backend on :8001
 ```
 
 Either way, the system will be available at:
@@ -80,139 +81,164 @@ Open the frontend and go to **Connections** to add your LLM API key (and, option
 
 Want the full stack (Postgres, Redis, Prometheus, Grafana) instead? Use `docker-compose.yml` in place of `docker-compose.local.yml`, and layer `docker-compose.monitoring.yml` on top of either one if you just want metrics without the rest.
 
-## 🔗 System Connection Diagram
+## 🔗 System Architecture
 
-### Available Tools & Components
+### Overview
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                                                                 │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐          │
-│  │ Web Search   │  │  Database    │  │   Email      │          │
-│  │ Tool         │  │   Tool       │  │   Tool       │          │
-│  │ (Google)     │  │ (SQL Query)  │  │ (SMTP)       │          │
-│  └──────────────┘  └──────────────┘  └──────────────┘          │
-│                                                                 │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐          │
-│  │  File Read   │  │ File Write   │  │   HTTP       │          │
-│  │    Tool      │  │    Tool      │  │  API Tool    │          │
-│  └──────────────┘  └──────────────┘  └──────────────┘          │
-│                                                                 │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐          │
-│  │ Code Execute │  │ Web Scrape   │  │  Utilities   │          │
-│  │  Tool        │  │    Tool      │  │   Tools      │          │
-│  └──────────────┘  └──────────────┘  └──────────────┘          │
-│                                                                 │
-│                         ▲         ▲                             │
-│                         │         │                             │
-│                    All coordinated by MCP Protocol              │
-│                                                                 │
-└─────────────────────────────────────────────────────────────────┘
-```
+```mermaid
+flowchart TB
+    User(["👤 User"])
 
-### System Architecture Flow
+    subgraph FE["Frontend - Angular"]
+        UI["Pages: Today (chat) · Tasks · Tools<br/>Connections · Activity · Settings"]
+        SVC["Services: HttpClient, WebSocket,<br/>local settings (localStorage)"]
+    end
 
-```
-┌────────────────────────────────────────────────────────────────┐
-│                          USER INPUT                            │
-│                    (Web/CLI/API Request)                       │
-└──────────────────────────┬─────────────────────────────────────┘
-                           │
-                           ▼
-┌────────────────────────────────────────────────────────────────┐
-│                     REST API (FastAPI)                         │
-│            ⚡ Validates & Routes Requests                      │
-└──────────────────────────┬─────────────────────────────────────┘
-                           │
-                           ▼
-┌────────────────────────────────────────────────────────────────┐
-│                      AGENT CORE                                │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐         │
-│  │  Planner     │  │  Executor    │  │  Reflector   │         │
-│  │ (Task Plan)  │  │ (Run Tools)  │  │ (Evaluate)   │         │
-│  └──────────────┘  └──────────────┘  └──────────────┘         │
-└──────────┬──────────────────────────────────────┬──────────────┘
-           │                                      │
-           ▼                                      ▼
-┌────────────────────────┐          ┌────────────────────────┐
-│   REASONING ENGINE     │          │    MEMORY SYSTEM       │
-│ ┌────────────────────┐ │          │ ┌────────────────────┐ │
-│ │  ReAct Loop        │ │          │ │  Short-Term (RAM)  │ │
-│ │  Chain-of-Thought  │ │          │ │  Long-Term (DB)    │ │
-│ │  Self-Reflection   │ │          │ │  Semantic Search   │ │
-│ └────────────────────┘ │          │ └────────────────────┘ │
-└────────────┬───────────┘          └────────────┬────────────┘
-             │                                   │
-             │        ┌─────────────────────────┘
-             │        │
-             ▼        ▼
-┌────────────────────────────────────────────────────────────────┐
-│                   MCP CLIENT & SERVER                          │
-│         (Tool Discovery & Invocation Protocol)                 │
-└──────────────────────────┬─────────────────────────────────────┘
-                           │
-        ┌──────────────────┼──────────────────┐
-        │                  │                  │
-        ▼                  ▼                  ▼
-┌──────────────────┐ ┌──────────────┐ ┌──────────────────┐
-│  WEB TOOLS       │ │ DATABASE     │ │   FILE & EMAIL   │
-│ ┌──────────────┐ │ │   TOOLS      │ │      TOOLS       │
-│ │Search        │ │ │ ┌──────────┐ │ │ ┌──────────────┐ │
-│ │Scrape        │ │ │ │Query     │ │ │ │Read/Write    │ │
-│ │HTTP Request  │ │ │ │Insert    │ │ │ │Send Email    │ │
-│ └──────────────┘ │ │ │Update    │ │ │ │Parse Files   │ │
-└──────────────────┘ │ └──────────┘ │ │ └──────────────┘ │
-                     └──────────────┘ └──────────────────┘
-        │                  │                  │
-        └──────────────────┼──────────────────┘
-                           │
-                           ▼
-        ┌──────────────────────────────────┐
-        │   LLM PROVIDERS                  │
-        │  ┌────────┐  ┌────────┐ ┌─────┐ │
-        │  │OpenAI  │  │Claude  │ │Groq │ │
-        │  └────────┘  └────────┘ └─────┘ │
-        └──────────────────────────────────┘
-                           │
-                           ▼
-        ┌──────────────────────────────────┐
-        │   DATA STORAGE                   │
-        │  ┌────────────────────────────┐  │
-        │  │ PostgreSQL (Persistence)   │  │
-        │  │ Redis (Cache)              │  │
-        │  └────────────────────────────┘  │
-        └──────────────────────────────────┘
-                           │
-                           ▼
-        ┌──────────────────────────────────┐
-        │  MONITORING & VISUALIZATION      │
-        │  ┌────────────────────────────┐  │
-        │  │ Prometheus (Metrics)       │  │
-        │  │ Grafana (Dashboards)       │  │
-        │  └────────────────────────────┘  │
-        └──────────────────────────────────┘
+    subgraph BE["Backend - FastAPI :8001"]
+        API["REST API<br/>/api/agents · /tasks · /tools · /oauth · /documents"]
+        AS["AgentService"]
+        OAuth["Gmail OAuth service<br/>+ filter repository"]
+    end
+
+    subgraph CORE["Agent Core"]
+        ORCH["Orchestrator"]
+        PLAN["Planner"]
+        EXEC["Executor"]
+        REACT["ReAct loop<br/>(think, act, observe)"]
+        EVAL["Evaluator"]
+        POL["Policy<br/>(forbidden tools, max steps,<br/>allowed domains)"]
+        MEM["Memory<br/>short-term · long-term"]
+    end
+
+    LLM["LLM providers<br/>OpenAI · Claude · Groq · local"]
+
+    subgraph MCP["MCP"]
+        CLIENT["MCP client"]
+        SERVER["MCP server (stdio)"]
+    end
+
+    subgraph TOOLS["24 tools"]
+        T1["Web: search, scraper, fetcher"]
+        T2["Database: reader, writer, SQL"]
+        T3["Files: reader, writer, manager"]
+        T4["Email: gmail_reader, gmail_sender,<br/>gmail_reply_candidates, gmail_reply, parser"]
+        T5["API · Code · Utility"]
+    end
+
+    subgraph DATA["Storage"]
+        DB[("SQLite / PostgreSQL")]
+        REDIS[("Redis (full stack)")]
+        FILES[("data/*.json<br/>filters, handled emails")]
+    end
+
+    GOOGLE["Google Gmail API"]
+
+    subgraph OBS["Monitoring (optional)"]
+        PROM["Prometheus"] --> GRAF["Grafana"]
+    end
+
+    User --> UI
+    UI --> SVC
+    SVC -- "HTTP /api (dev proxy or nginx)" --> API
+    SVC -. "WebSocket (metrics)" .-> API
+    API --> AS --> ORCH
+    API --> OAuth
+    ORCH --> PLAN --> EXEC --> REACT
+    REACT --> LLM
+    PLAN --> LLM
+    EXEC --> EVAL
+    ORCH --- MEM
+    EXEC --> POL --> CLIENT
+    CLIENT <--> SERVER
+    SERVER --> T1 & T2 & T3 & T4 & T5
+    T4 --> GOOGLE
+    OAuth --> GOOGLE
+    OAuth --> FILES
+    MEM --> DB
+    MEM -.-> REDIS
+    API -. "/metrics" .-> PROM
 ```
 
-### Component Interaction Matrix
+### Request flow: running a task
 
+```mermaid
+sequenceDiagram
+    actor U as User
+    participant FE as Angular UI
+    participant API as FastAPI
+    participant AG as Agent (Planner / ReAct)
+    participant LLM as LLM provider
+    participant MCP as MCP server + tools
+
+    U->>FE: "Search X and summarize"
+    FE->>API: POST /api/agents/run (task, provider, key, policy)
+    API->>AG: run_task(task, config)
+    AG->>LLM: create a plan
+    loop each plan step (up to max_steps)
+        AG->>LLM: Thought / Action?
+        LLM-->>AG: Action + input
+        AG->>AG: policy check (forbidden tools, domains)
+        AG->>MCP: call_tool(name, params)
+        MCP-->>AG: observation
+    end
+    AG->>LLM: Final Answer
+    AG-->>API: result
+    API-->>FE: result
+    FE-->>U: chat message
 ```
-┌────────────────┬──────────┬───────────┬──────────┬───────────┐
-│   Component    │  Agent   │  Reasoning│ Memory   │   Tools   │
-├────────────────┼──────────┼───────────┼──────────┼───────────┤
-│ Agent Core     │    -     │  Controls │ Updates  │ Invokes   │
-│ Reasoning      │ Receives │     -     │ Queries  │ Decides   │
-│ Memory System  │ Stores   │ Provides  │    -     │ Logs      │
-│ MCP Tools      │ Reports  │ Analyzes  │ Records  │    -      │
-│ LLM Provider   │ Assists  │ Guides    │ Context  │ Evaluates │
-│ API/Frontend   │ Status   │ Metrics   │ Insights │ Display   │
-└────────────────┴──────────┴───────────┴──────────┴───────────┘
+
+### Gmail auto-reply flow
+
+```mermaid
+sequenceDiagram
+    actor U as User
+    participant FE as Angular UI
+    participant API as FastAPI
+    participant AG as Agent
+    participant RC as gmail_reply_candidates
+    participant RP as gmail_reply
+    participant G as Gmail API
+
+    U->>FE: tick Auto-reply rules, Save
+    FE->>API: POST /api/oauth/gmail/filters
+    Note over API: stored per Gmail session<br/>(auto-reply is off by default)
+
+    U->>FE: "Reply to my emails"
+    FE->>API: POST /api/agents/run (gmail_session_id)
+    API->>AG: run task
+    AG->>RC: list candidates
+    RC->>G: list unread inbox mail
+    RC->>RC: apply rules (ignore list, automated mail,<br/>allowed senders, already answered, cap)
+    RC-->>AG: eligible emails with full text + tone
+    loop each email
+        AG->>RP: reply(message_id, body)
+        RP->>RP: re-check the rules server-side
+        alt mode = draft (default)
+            RP->>G: drafts.create (same thread)
+        else mode = send
+            RP->>G: messages.send (same thread)
+        end
+        RP-->>AG: outcome (each email answered at most once)
+    end
+    AG-->>FE: summary
 ```
+
+### Component interaction matrix
+
+| Component | Agent | Reasoning | Memory | Tools |
+|-----------|-------|-----------|--------|-------|
+| **Agent Core** | - | Controls | Updates | Invokes |
+| **Reasoning** | Receives | - | Queries | Decides |
+| **Memory System** | Stores | Provides | - | Logs |
+| **MCP Tools** | Reports | Analyzes | Records | - |
+| **LLM Provider** | Assists | Guides | Context | Evaluates |
+| **API / Frontend** | Status | Metrics | Insights | Display |
 
 ## 📁 Project Architecture
 
 ```
 mcp_agent_system/
-├── mcp_server/          # MCP Protocol Server (22 tools)
+├── mcp_server/          # MCP Protocol Server (24 tools)
 │   ├── tools/           # Web, database, file, email, code tools
 │   ├── handlers/        # Tool request handlers
 │   ├── resources/       # MCP resource definitions
@@ -232,8 +258,8 @@ mcp_agent_system/
 │   ├── models/          # Pydantic data models
 │   └── utils/           # Helper utilities
 │
-├── frontend/            # React Dashboard
-│   ├── src/             # React components and pages
+├── frontend-angular/    # Angular Dashboard
+│   ├── src/app/         # Standalone components, pages, services (core/)
 │   └── public/          # Static assets
 │
 ├── config/              # Configuration Management
@@ -343,7 +369,7 @@ COMPLETE ✓
 | **AI/Reasoning** | OpenAI API, Claude, Groq, LangChain |
 | **MCP Protocol** | Python MCP SDK |
 | **Backend API** | FastAPI, Python 3.10+ |
-| **Frontend** | React, TypeScript, Axios |
+| **Frontend** | Angular 22 (standalone components, signals), TypeScript, RxJS |
 | **Database** | PostgreSQL (primary), Redis (cache) |
 | **Testing** | Pytest, pytest-asyncio |
 | **Containerization** | Docker, Docker Compose |
@@ -475,7 +501,7 @@ This project is licensed under the MIT License. See [LICENSE](LICENSE) file for 
 
 - [Model Context Protocol Documentation](https://modelcontextprotocol.io)
 - [FastAPI Documentation](https://fastapi.tiangolo.com)
-- [React Documentation](https://react.dev)
+- [Angular Documentation](https://angular.dev)
 - [OpenAI API Reference](https://platform.openai.com/docs)
 
 ---
