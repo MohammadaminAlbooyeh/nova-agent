@@ -15,7 +15,25 @@ interface GmailFilters {
   important_terms: string[];
   only_important: boolean;
   max_results: number;
+  reply_enabled: boolean;
+  reply_mode: 'draft' | 'send';
+  reply_only_important: boolean;
+  reply_only_unread: boolean;
+  reply_skip_ignored: boolean;
+  reply_skip_automated: boolean;
+  reply_skip_already_replied: boolean;
+  reply_allowed_senders: string[];
+  reply_max_per_run: number;
+  reply_tone: 'friendly' | 'formal' | 'brief';
+  reply_instructions: string;
 }
+
+type ReplyToggle =
+  | 'reply_only_unread'
+  | 'reply_only_important'
+  | 'reply_skip_ignored'
+  | 'reply_skip_automated'
+  | 'reply_skip_already_replied';
 
 @Component({
   selector: 'app-connections-page',
@@ -194,6 +212,109 @@ interface GmailFilters {
         }
       </div>
     }
+    @if (authStatus()?.authenticated && filters(); as f) {
+      <div class="card">
+        <h2>Auto-reply</h2>
+        <p class="section-description">
+          Choose which emails the agent may answer. Tell it "reply to my emails" in chat and it will read the
+          emails that pass these rules, write a reply to each one, and keep it in the original conversation.
+          Replies are saved as Gmail drafts unless you switch to sending.
+        </p>
+
+        <label class="tool-toggle" style="margin-bottom: 14px">
+          <span class="switch">
+            <input type="checkbox" [checked]="f.reply_enabled" (change)="updateFilters({ reply_enabled: $any($event.target).checked })" />
+            <span class="slider"></span>
+          </span>
+          <strong>Let the agent reply to my emails</strong>
+        </label>
+
+        <div [style.opacity]="f.reply_enabled ? 1 : 0.5" [style.pointer-events]="f.reply_enabled ? 'auto' : 'none'">
+          <div class="form-group">
+            <label>What should happen to each reply?</label>
+            <select [ngModel]="f.reply_mode" (ngModelChange)="updateFilters({ reply_mode: $event })">
+              <option value="draft">Save as a draft in Gmail (recommended, I review before sending)</option>
+              <option value="send">Send immediately</option>
+            </select>
+            @if (f.reply_mode === 'send') {
+              <div class="banner banner-warning">
+                The agent will send replies without asking you first. Replies can't be unsent.
+              </div>
+            }
+          </div>
+
+          <div class="form-group">
+            <label>Only reply to emails that are…</label>
+            @for (opt of replyToggles; track opt.key) {
+              <label class="tool-toggle">
+                <span class="switch">
+                  <input type="checkbox" [checked]="f[opt.key]" (change)="updateFilters(toggle(opt.key, $any($event.target).checked))" />
+                  <span class="slider"></span>
+                </span>
+                <span>{{ opt.label }}</span>
+              </label>
+            }
+          </div>
+
+          <div class="form-group">
+            <label>
+              Only these senders
+              <span class="hint" style="display: inline; font-weight: 400">(comma-separated, empty = anyone)</span>
+            </label>
+            <input
+              type="text"
+              placeholder="boss@company.com, client.com"
+              [ngModel]="(f.reply_allowed_senders || []).join(', ')"
+              (ngModelChange)="updateFilters({ reply_allowed_senders: splitList($event) })"
+            />
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Max replies per run</label>
+              <input
+                type="number"
+                min="1"
+                max="25"
+                [ngModel]="f.reply_max_per_run"
+                (ngModelChange)="updateFilters({ reply_max_per_run: clamp($event, 1, 25) })"
+              />
+            </div>
+            <div class="form-group">
+              <label>Tone</label>
+              <select [ngModel]="f.reply_tone" (ngModelChange)="updateFilters({ reply_tone: $event })">
+                <option value="friendly">Friendly</option>
+                <option value="formal">Formal</option>
+                <option value="brief">Brief</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Extra instructions for replies <span class="hint" style="display: inline; font-weight: 400">(optional)</span></label>
+            <textarea
+              rows="3"
+              maxlength="500"
+              placeholder="e.g. Sign off as Amin. If someone asks for a meeting, suggest next Tuesday afternoon."
+              [ngModel]="f.reply_instructions"
+              (ngModelChange)="updateFilters({ reply_instructions: $event })"
+            ></textarea>
+          </div>
+        </div>
+
+        <button class="btn-primary" (click)="saveFilters()">Save Auto-reply</button>
+        @if (filtersSaved()) {
+          <div class="banner banner-success">Saved.</div>
+        }
+        @if (filtersError()) {
+          <div class="banner banner-error">{{ filtersError() }}</div>
+        }
+        <p class="hint">
+          The agent never replies to mail matching your Ignore list or to mailing lists unless you untick those
+          options. Each email is answered at most once.
+        </p>
+      </div>
+    }
   `,
 })
 export class ConnectionsPage implements OnInit, OnDestroy {
@@ -224,6 +345,16 @@ export class ConnectionsPage implements OnInit, OnDestroy {
   private connectPollStop: ReturnType<typeof setTimeout> | null = null;
 
   protected splitList = (v: string) => v.split(',').map((s) => s.trim()).filter(Boolean);
+  protected clamp = (v: unknown, lo: number, hi: number) => Math.min(hi, Math.max(lo, Number(v) || lo));
+  protected toggle = (key: ReplyToggle, value: boolean) => ({ [key]: value }) as Partial<GmailFilters>;
+
+  protected readonly replyToggles: { key: ReplyToggle; label: string }[] = [
+    { key: 'reply_only_unread', label: 'Unread' },
+    { key: 'reply_only_important', label: 'Marked important (matches your Important list)' },
+    { key: 'reply_skip_ignored', label: 'Not on my Ignore list (newsletters, no-reply, …)' },
+    { key: 'reply_skip_automated', label: 'Not automated (mailing lists, bulk mail, auto-responders)' },
+    { key: 'reply_skip_already_replied', label: 'Not already answered by me' },
+  ];
 
   async ngOnInit() {
     const existing = localStorage.getItem(SESSION_STORAGE_KEY);
@@ -363,12 +494,7 @@ export class ConnectionsPage implements OnInit, OnDestroy {
     try {
       const saved = await this.api.post<GmailFilters>(
         '/oauth/gmail/filters',
-        {
-          ignore_terms: f.ignore_terms,
-          important_terms: f.important_terms,
-          only_important: f.only_important,
-          max_results: f.max_results,
-        },
+        f,
         { session_id: id },
       );
       this.filters.set(saved);

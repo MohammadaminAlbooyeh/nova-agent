@@ -12,17 +12,16 @@ class GmailSenderTool(BaseTool):
                 "to": {"type": "string", "description": "Recipient email"},
                 "subject": {"type": "string", "description": "Email subject"},
                 "body": {"type": "string", "description": "Email body"},
+                "session_id": {"type": "string", "description": "Gmail session id (filled in automatically)"},
             },
             "required": ["to", "subject", "body"],
         }
 
-    async def execute(self, to: str, subject: str, body: str) -> str:
+    async def execute(self, to: str, subject: str, body: str, session_id: str = None) -> str:
         import base64
         from email.message import EmailMessage
-        from googleapiclient.discovery import build
-        from google.oauth2.credentials import Credentials
-        creds = Credentials.from_authorized_user_file("token.json")
-        service = build("gmail", "v1", credentials=creds)
+        from mcp_server.tools.email_tools.gmail_common import build_service
+        service = await build_service(session_id)
         message = EmailMessage()
         message.set_content(body)
         message["To"] = to

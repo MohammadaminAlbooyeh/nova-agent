@@ -14,6 +14,20 @@ DEFAULT_FILTERS = {
     "important_terms": ["invoice", "urgent", "payment", "contract", "deadline", "meeting"],
     "only_important": False,
     "max_results": 10,
+    # --- Auto-reply rules (used by the gmail_reply_candidates / gmail_reply tools) ---
+    # Off by default, and replies are saved as Gmail drafts rather than sent,
+    # so enabling the feature never sends mail until the user opts in to it.
+    "reply_enabled": False,
+    "reply_mode": "draft",  # "draft" | "send"
+    "reply_only_important": False,
+    "reply_only_unread": True,
+    "reply_skip_ignored": True,
+    "reply_skip_automated": True,
+    "reply_skip_already_replied": True,
+    "reply_allowed_senders": [],  # empty = any sender
+    "reply_max_per_run": 5,
+    "reply_tone": "friendly",  # "friendly" | "formal" | "brief"
+    "reply_instructions": "",
 }
 
 

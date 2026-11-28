@@ -72,6 +72,7 @@ async def run_agent(
     logger.info(f"API: Run agent with task: {request.task}")
 
     config = {
+        "gmail_session_id": request.gmail_session_id,
         "llm": {
             "provider": request.llm_provider or _settings_store.get("llmProvider", "openai"),
             "api_key": request.api_key,

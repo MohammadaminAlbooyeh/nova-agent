@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException, Depends, Query
 from pydantic import BaseModel, Field
-from typing import Optional, List
+from typing import Literal, Optional, List
 from backend.services.gmail_oauth_service import GmailOAuthService
 from backend.services.oauth_repository import OAuthRepository
 from backend.services.gmail_filter_repository import GmailFilterRepository
@@ -63,6 +63,27 @@ class GmailFiltersRequest(BaseModel):
         default=None, description="If true, the agent only surfaces emails matching important_terms"
     )
     max_results: Optional[int] = Field(default=None, description="Max emails to scan per read")
+
+    # Auto-reply rules
+    reply_enabled: Optional[bool] = Field(default=None, description="Allow the agent to reply to emails at all")
+    reply_mode: Optional[Literal["draft", "send"]] = Field(
+        default=None, description="'draft' saves replies as Gmail drafts, 'send' sends them immediately"
+    )
+    reply_only_important: Optional[bool] = Field(default=None, description="Only reply to emails matching important_terms")
+    reply_only_unread: Optional[bool] = Field(default=None, description="Only reply to unread emails")
+    reply_skip_ignored: Optional[bool] = Field(default=None, description="Never reply to emails matching ignore_terms")
+    reply_skip_automated: Optional[bool] = Field(default=None, description="Never reply to bulk/mailing-list/automated mail")
+    reply_skip_already_replied: Optional[bool] = Field(
+        default=None, description="Skip threads where the last message is already from the user"
+    )
+    reply_allowed_senders: Optional[List[str]] = Field(
+        default=None, description="If non-empty, only reply to senders containing one of these terms"
+    )
+    reply_max_per_run: Optional[int] = Field(default=None, ge=1, le=25, description="Max replies per agent run")
+    reply_tone: Optional[Literal["friendly", "formal", "brief"]] = Field(default=None, description="Tone for replies")
+    reply_instructions: Optional[str] = Field(
+        default=None, max_length=500, description="Extra guidance for the agent when writing replies"
+    )
 
 
 @router.post("/authorize/{provider}")

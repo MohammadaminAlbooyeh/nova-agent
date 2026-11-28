@@ -21,6 +21,8 @@ from mcp_server.tools.file_tools.file_writer import FileWriterTool
 from mcp_server.tools.file_tools.file_manager import FileManagerTool
 from mcp_server.tools.email_tools.gmail_reader import GmailReaderTool
 from mcp_server.tools.email_tools.gmail_sender import GmailSenderTool
+from mcp_server.tools.email_tools.gmail_reply_candidates import GmailReplyCandidatesTool
+from mcp_server.tools.email_tools.gmail_reply import GmailReplyTool
 from mcp_server.tools.email_tools.email_parser import EmailParserTool
 from mcp_server.tools.api_tools.http_client import HTTPClientTool
 from mcp_server.tools.api_tools.rest_caller import RESTCallerTool
@@ -67,7 +69,7 @@ class MCPServer:
             WebSearchTool, WebScraperTool, URLFetcherTool,
             SQLExecutorTool, DBReaderTool, DBWriterTool,
             FileReaderTool, FileWriterTool, FileManagerTool,
-            GmailReaderTool, GmailSenderTool, EmailParserTool,
+            GmailReaderTool, GmailSenderTool, GmailReplyCandidatesTool, GmailReplyTool, EmailParserTool,
             HTTPClientTool, RESTCallerTool, WebhookHandlerTool,
             CodeExecutorTool, CodeAnalyzerTool, TestRunnerTool,
             CalculatorTool, DateTimeTool, TextProcessorTool, DataFormatterTool,

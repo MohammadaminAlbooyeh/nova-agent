@@ -7,7 +7,7 @@ export const TOOL_CATEGORIES: ToolCategory[] = [
   { label: 'Web', tools: ['web_search', 'web_scraper', 'url_fetcher'] },
   { label: 'Database', tools: ['sql_executor', 'db_reader', 'db_writer'] },
   { label: 'Files', tools: ['file_reader', 'file_writer', 'file_manager'] },
-  { label: 'Email', tools: ['gmail_reader', 'gmail_sender', 'email_parser'] },
+  { label: 'Email', tools: ['gmail_reader', 'gmail_sender', 'gmail_reply_candidates', 'gmail_reply', 'email_parser'] },
   { label: 'API', tools: ['http_client', 'rest_caller', 'webhook_handler'] },
   { label: 'Code', tools: ['code_executor', 'code_analyzer', 'test_runner'] },
   { label: 'Utility', tools: ['calculator', 'datetime_tool', 'text_processor', 'data_formatter'] },

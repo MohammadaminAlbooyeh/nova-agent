@@ -32,7 +32,13 @@ class Executor:
 
     async def execute_tool(self, tool_name: str, params: dict = None) -> str:
         logger.info(f"Executing tool: {tool_name}")
-        return await self.agent.mcp_client.call_tool(tool_name, params or {})
+        params = dict(params or {})
+        gmail_session_id = getattr(self.agent, "gmail_session_id", None)
+        if tool_name.startswith("gmail_") and gmail_session_id:
+            # Always use the session the user connected Gmail under; never a
+            # session id the model made up, which could point at someone else's account.
+            params["session_id"] = gmail_session_id
+        return await self.agent.mcp_client.call_tool(tool_name, params)
 
     async def _execute_step(self, step, original_task: str | None = None) -> str:
         if isinstance(step, str):

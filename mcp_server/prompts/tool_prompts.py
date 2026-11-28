@@ -18,6 +18,8 @@ File Tools:
 Email Tools:
   - gmail_reader: Use to read emails from Gmail
   - gmail_sender: Use to send emails via Gmail
+  - gmail_reply_candidates: Use first when asked to reply to emails; lists the emails the user's auto-reply rules allow answering
+  - gmail_reply: Use to reply to one email from gmail_reply_candidates (sent or saved as a draft, per the user's rules)
   - email_parser: Use to parse email content
 
 API Tools:

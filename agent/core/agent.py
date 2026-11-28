@@ -34,6 +34,7 @@ class Agent:
         self._llm_config = llm_config
         self._llm = None
         self.history = []
+        self.gmail_session_id = self.config.get("gmail_session_id")
 
     @property
     def llm(self):

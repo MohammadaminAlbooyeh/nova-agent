@@ -35,6 +35,8 @@ class AgentRunRequest(BaseModel):
     api_key: Optional[str] = None
     model: Optional[str] = None
     policy: Optional[AgentPolicyRequest] = None
+    # Connections-page session whose Gmail account/filters the Gmail tools should use.
+    gmail_session_id: Optional[str] = None
 
 
 class AgentRunResponse(BaseModel):

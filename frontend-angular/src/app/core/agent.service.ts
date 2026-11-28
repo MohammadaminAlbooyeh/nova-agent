@@ -1,5 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { ApiService } from './api.service';
+import { SESSION_STORAGE_KEY } from './config';
 import { LocalSettingsService } from './local-settings.service';
 
 export interface AgentRunResult {
@@ -26,6 +27,7 @@ export class AgentService {
       llm_provider: s.llmProvider,
       api_key: s.apiKey || null,
       model: s.model || null,
+      gmail_session_id: localStorage.getItem(SESSION_STORAGE_KEY) || null,
       policy: {
         max_steps: s.maxSteps,
         forbidden_tools: s.forbiddenTools,
