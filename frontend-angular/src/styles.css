@@ -746,3 +746,10 @@ code {
 a.nav-rail__user { text-decoration: none; color: inherit; }
 svg.lucide { flex-shrink: 0; }
 @keyframes spin { to { transform: rotate(360deg); } }
+
+/* Toggles inside a .form-group must keep their flex layout and spacing */
+.form-group label.tool-toggle {
+  display: flex;
+  margin-bottom: 0;
+  font-weight: 400;
+}
