@@ -753,3 +753,25 @@ svg.lucide { flex-shrink: 0; }
   margin-bottom: 0;
   font-weight: 400;
 }
+
+/* Two-column card grid (Connections page) */
+.main-content.narrow.wide {
+  max-width: 1240px;
+}
+
+.cards-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  align-items: start;
+}
+
+.cards-grid > .card + .card {
+  margin-top: 0;
+}
+
+@media (max-width: 960px) {
+  .cards-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

@@ -60,6 +60,7 @@ type ReplyToggle =
     <h1>Connections</h1>
     <p class="page-subtitle">Everything the agent needs you to connect, in one place.</p>
 
+    <div class="cards-grid">
     <div class="card">
       <h2>LLM Provider &amp; API Key</h2>
       <p class="section-description">
@@ -337,6 +338,7 @@ type ReplyToggle =
         </p>
         </fieldset>
       </div>
+    </div>
   `,
 })
 export class ConnectionsPage implements OnInit, OnDestroy {

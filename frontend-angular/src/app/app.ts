@@ -11,7 +11,7 @@ import { Sidebar } from './components/sidebar';
     <div class="app">
       <div class="app-body">
         <app-sidebar />
-        <main class="main-content" [class.narrow]="!isToday()">
+        <main class="main-content" [class.narrow]="!isToday()" [class.wide]="isWide()">
           <router-outlet />
         </main>
       </div>
@@ -28,4 +28,5 @@ export class App {
     { initialValue: this.router.url.split(/[?#]/)[0] },
   );
   protected readonly isToday = () => this.path() === '/' || this.path() === '';
+  protected readonly isWide = () => this.path() === '/connections';
 }
